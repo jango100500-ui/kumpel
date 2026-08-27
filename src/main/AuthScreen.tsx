@@ -48,7 +48,7 @@ export const AuthScreen: React.FC = () => {
             <JellyButton
               type="button"
               flashColor="bg-white/15"
-              className="h-12 rounded-full bg-black/10 border border-white/[0.08] backdrop-blur-md flex items-center justify-center"
+              className="h-12 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center"
             >
               <img
                 src="/google.png"
@@ -60,7 +60,7 @@ export const AuthScreen: React.FC = () => {
             <JellyButton
               type="button"
               flashColor="bg-white/15"
-              className="h-12 rounded-full bg-black/10 border border-white/[0.08] backdrop-blur-md flex items-center justify-center"
+              className="h-12 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center"
             >
               <img
                 src="/apple.png"
@@ -72,7 +72,7 @@ export const AuthScreen: React.FC = () => {
             <JellyButton
               type="button"
               flashColor="bg-white/15"
-              className="h-12 rounded-full bg-black/10 border border-white/[0.08] backdrop-blur-md flex items-center justify-center"
+              className="h-12 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center"
             >
               <img
                 src="/telegram.png"
