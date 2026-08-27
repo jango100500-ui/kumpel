@@ -15,3 +15,28 @@ body {
   height: 100dvh;
   width: 100vw;
 }
+
+@keyframes flash-ripple {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(3.5);
+    opacity: 0;
+  }
+}
+
+.animate-ripple {
+  animation: flash-ripple 0.35s ease-out forwards;
+}
+
+.jelly-active {
+  transform: scale(1.045);
+  transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.jelly-idle {
+  transform: scale(1);
+  transition: transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
