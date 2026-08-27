@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { useOrientation } from '@/mechanics/useOrientation';
 import { JellyButton } from '@/uis/JellyButton';
 
@@ -12,34 +12,80 @@ interface Transaction {
 }
 
 const mockTransactions: Transaction[] = [
-  {
-    id: '1',
-    name: 'Алексей',
-    type: 'Перевод',
-    amount: '+500 ₽',
-    isPositive: true,
-    date: 'Вчера, 14:20',
-  },
-  {
-    id: '2',
-    name: 'Максим',
-    type: 'Перевод',
-    amount: '-250 ₽',
-    isPositive: false,
-    date: '06.08',
-  },
-  {
-    id: '3',
-    name: 'Дмитрий',
-    type: 'Перевод',
-    amount: '+1 200 ₽',
-    isPositive: true,
-    date: '04.08',
-  },
+  { id: '1', name: 'Алексей', type: 'Перевод', amount: '+500 ₽', isPositive: true, date: 'Вчера, 14:20' },
+  { id: '2', name: 'Максим', type: 'Перевод', amount: '-250 ₽', isPositive: false, date: '06.08' },
+  { id: '3', name: 'Дмитрий', type: 'Перевод', amount: '+1 200 ₽', isPositive: true, date: '04.08' },
+  { id: '4', name: 'Иван', type: 'Перевод', amount: '-400 ₽', isPositive: false, date: '02.08' },
+  { id: '5', name: 'Сергей', type: 'Перевод', amount: '+2 500 ₽', isPositive: true, date: '29.07' },
+  { id: '6', name: 'Артем', type: 'Перевод', amount: '-150 ₽', isPositive: false, date: '25.07' },
+  { id: '7', name: 'Владислав', type: 'Перевод', amount: '+800 ₽', isPositive: true, date: '21.07' },
+  { id: '8', name: 'Никита', type: 'Перевод', amount: '-600 ₽', isPositive: false, date: '18.07' },
 ];
 
 export const MainScreen: React.FC = () => {
   const tilt = useOrientation(22);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const dragStartY = useRef(0);
+  const currentDragOffset = useRef(0);
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    setIsDragging(true);
+    dragStartY.current = e.clientY;
+    currentDragOffset.current = 0;
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+
+    const deltaY = e.clientY - dragStartY.current;
+
+    if (!isExpanded) {
+      if (deltaY < 0) {
+        currentDragOffset.current = deltaY;
+      } else {
+        currentDragOffset.current = deltaY * 0.2;
+      }
+    } else {
+      if (deltaY > 0) {
+        currentDragOffset.current = deltaY;
+      } else {
+        currentDragOffset.current = deltaY * 0.2;
+      }
+    }
+
+    setDragOffset(currentDragOffset.current);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    setIsDragging(false);
+
+    try {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+
+    const delta = currentDragOffset.current;
+
+    if (!isExpanded) {
+      if (delta < -70) {
+        setIsExpanded(true);
+      }
+    } else {
+      if (delta > 70) {
+        setIsExpanded(false);
+      }
+    }
+
+    setDragOffset(0);
+    currentDragOffset.current = 0;
+  };
+
+  const sheetTop = isExpanded ? 54 : 375;
+  const targetTranslateY = isDragging ? dragOffset : 0;
 
   return (
     <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col justify-between bg-[#5491D0] select-none">
@@ -51,7 +97,14 @@ export const MainScreen: React.FC = () => {
         }}
       />
 
-      <div className="relative z-10 w-full px-5 pt-3 pb-3 flex flex-col items-center flex-shrink-0">
+      <div
+        className="relative z-10 w-full px-5 pt-3 pb-3 flex flex-col items-center flex-shrink-0 transition-all duration-350 ease-out"
+        style={{
+          opacity: isExpanded ? 0.2 : 1,
+          transform: isExpanded ? 'scale(0.95) translateY(-10px)' : 'scale(1) translateY(0)',
+          filter: isExpanded ? 'blur(2px)' : 'none',
+        }}
+      >
         <div className="w-full flex justify-end mb-2.5">
           <JellyButton
             type="button"
@@ -118,23 +171,39 @@ export const MainScreen: React.FC = () => {
         </div>
       </div>
 
-      <div className="relative z-10 w-full flex-1 bg-white rounded-t-[36px] pt-4 px-5 pb-6 flex flex-col items-center overflow-hidden">
-        <p className="text-[#8E8E93] text-[13px] font-medium tracking-tight mb-3 text-center">
-          История переводов
-        </p>
+      <div
+        className="absolute inset-x-0 bottom-0 z-20 bg-white rounded-t-[36px] flex flex-col items-center shadow-[-0px_-10px_35px_rgba(0,0,0,0.15)] will-change-transform"
+        style={{
+          top: `${sheetTop}px`,
+          transform: `translateY(${targetTranslateY}px)`,
+          transition: isDragging ? 'none' : 'top 400ms cubic-bezier(0.16, 1, 0.3, 1), transform 400ms cubic-bezier(0.16, 1, 0.3, 1)',
+        }}
+      >
+        <div
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          className="w-full pt-2.5 pb-2 flex flex-col items-center cursor-grab active:cursor-grabbing touch-none select-none flex-shrink-0"
+        >
+          <div className="w-9 h-1.5 rounded-full bg-black/15" />
+          <p className="text-[#8E8E93] text-[13px] font-medium tracking-tight mt-2.5 text-center pointer-events-none">
+            История переводов
+          </p>
+        </div>
 
-        <div className="w-full max-w-[340px] flex flex-col gap-2.5">
+        <div className="w-full max-w-[340px] px-2 pb-8 flex-1 overflow-y-auto scroll-y-touch flex flex-col gap-2.5">
           {mockTransactions.map((tx) => (
             <div
               key={tx.id}
-              className="w-full h-14 px-3.5 rounded-full bg-black/[0.04] border border-black/[0.04] flex items-center justify-between"
+              className="w-full h-14 px-3.5 rounded-full bg-black/[0.04] border border-black/[0.04] flex items-center justify-between flex-shrink-0"
             >
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-black/[0.05] flex items-center justify-center flex-shrink-0">
                   <img
                     src="/transfer.png"
                     alt="Transfer"
-                    className="w-4 h-4 object-contain opacity-70"
+                    className="w-4 h-4 object-contain brightness-0 opacity-80 pointer-events-none"
                   />
                 </div>
                 <div className="flex flex-col">
