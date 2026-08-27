@@ -20,7 +20,7 @@ export const AuthScreen: React.FC = () => {
       <div className="relative z-10 flex-1" />
 
       <div className="relative z-10 w-full px-7 pb-10 flex flex-col items-center">
-        <div className="w-full max-w-[340px] flex flex-col items-center text-center">
+        <div className="w-full max-w-[320px] flex flex-col items-center text-center">
           <h1 className="text-white text-[24px] font-semibold tracking-tight leading-tight">
             {loc.welcomeTitle}
           </h1>
@@ -31,12 +31,12 @@ export const AuthScreen: React.FC = () => {
           <JellyButton
             type="button"
             flashColor="bg-black/10"
-            className="w-full h-14 bg-white text-black text-[17px] font-semibold rounded-full flex items-center justify-center shadow-none"
+            className="w-full h-12 bg-white text-black text-[16px] font-semibold rounded-full flex items-center justify-center shadow-none"
           >
             {loc.signIn}
           </JellyButton>
 
-          <div className="w-full flex items-center justify-center my-5">
+          <div className="w-full flex items-center justify-center my-4">
             <div className="h-[0.5px] bg-white/60 flex-1" />
             <span className="px-3 text-white/60 text-[13px] font-medium tracking-wide">
               {loc.or}
@@ -44,45 +44,45 @@ export const AuthScreen: React.FC = () => {
             <div className="h-[0.5px] bg-white/60 flex-1" />
           </div>
 
-          <div className="w-full grid grid-cols-3 gap-3">
+          <div className="w-full grid grid-cols-3 gap-2.5">
             <JellyButton
               type="button"
-              flashColor="bg-white/30"
-              className="h-14 rounded-full bg-white/15 border border-white/12 backdrop-blur-md flex items-center justify-center"
+              flashColor="bg-white/15"
+              className="h-12 rounded-full bg-black/10 border border-white/[0.08] backdrop-blur-md flex items-center justify-center"
             >
               <img
                 src="/google.png"
                 alt="Google"
-                className="w-6 h-6 object-contain brightness-0 invert opacity-75 pointer-events-none"
+                className="w-5 h-5 object-contain brightness-0 invert opacity-75 pointer-events-none"
               />
             </JellyButton>
 
             <JellyButton
               type="button"
-              flashColor="bg-white/30"
-              className="h-14 rounded-full bg-white/15 border border-white/12 backdrop-blur-md flex items-center justify-center"
+              flashColor="bg-white/15"
+              className="h-12 rounded-full bg-black/10 border border-white/[0.08] backdrop-blur-md flex items-center justify-center"
             >
               <img
                 src="/apple.png"
                 alt="Apple"
-                className="w-6 h-6 object-contain brightness-0 invert opacity-75 pointer-events-none"
+                className="w-5 h-5 object-contain brightness-0 invert opacity-75 pointer-events-none"
               />
             </JellyButton>
 
             <JellyButton
               type="button"
-              flashColor="bg-white/30"
-              className="h-14 rounded-full bg-white/15 border border-white/12 backdrop-blur-md flex items-center justify-center"
+              flashColor="bg-white/15"
+              className="h-12 rounded-full bg-black/10 border border-white/[0.08] backdrop-blur-md flex items-center justify-center"
             >
               <img
                 src="/telegram.png"
                 alt="Telegram"
-                className="w-6 h-6 object-contain brightness-0 invert opacity-75 pointer-events-none"
+                className="w-5 h-5 object-contain brightness-0 invert opacity-75 pointer-events-none"
               />
             </JellyButton>
           </div>
 
-          <p className="mt-8 text-white/60 text-[12px] leading-relaxed text-center">
+          <p className="mt-7 text-white/60 text-[12px] leading-relaxed text-center">
             {loc.termsPrefix}{' '}
             <span className="underline underline-offset-2 text-white/80 cursor-pointer">
               {loc.termsLink}
