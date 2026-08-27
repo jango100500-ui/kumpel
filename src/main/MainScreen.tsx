@@ -39,6 +39,18 @@ const cardStyles: CardStyle[] = [
   { id: 'dark', name: 'Темный', bgClass: 'bg-[#1C1C1E]', textClass: 'text-white', accentColor: '#1C1C1E', isDarkLogo: false },
 ];
 
+type BackgroundOption = {
+  id: string;
+  name: string;
+  image: string;
+};
+
+const backgroundOptions: BackgroundOption[] = [
+  { id: 'classic', name: 'Классика', image: '/background2.png' },
+  { id: 'rain', name: 'Ливень', image: '/rain.png' },
+  { id: 'rise', name: 'Рассвет', image: '/rise.png' },
+];
+
 const MIN_Y = 56;
 const MAX_Y = 380;
 const AUTH_TRANSITION = 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)';
@@ -96,14 +108,27 @@ export const MainScreen: React.FC = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   
   const [savedStyleId, setSavedStyleId] = useState('classic');
-  const [savedShowChip, setSavedShowChip] = useState(false);
-
   const [tempStyleId, setTempStyleId] = useState('classic');
-  const [tempShowChip, setTempShowChip] = useState(false);
-  const [tempNotifs, setTempNotifs] = useState(false);
+
+  const [savedBgId, setSavedBgId] = useState('classic');
+  const [tempBgId, setTempBgId] = useState('classic');
+
+  const [currentBgImage, setCurrentBgImage] = useState('/background2.png');
+  const [bgOpacity, setBgOpacity] = useState(1);
 
   const activeStyle = cardStyles.find((s) => s.id === (isEditMode ? tempStyleId : savedStyleId)) || cardStyles[0];
-  const activeShowChip = isEditMode ? tempShowChip : savedShowChip;
+  const activeBg = backgroundOptions.find((b) => b.id === (isEditMode ? tempBgId : savedBgId)) || backgroundOptions[0];
+
+  useEffect(() => {
+    if (activeBg.image !== currentBgImage) {
+      setBgOpacity(0);
+      const timeout = setTimeout(() => {
+        setCurrentBgImage(activeBg.image);
+        setBgOpacity(1);
+      }, 160);
+      return () => clearTimeout(timeout);
+    }
+  }, [activeBg.image, currentBgImage]);
 
   useEffect(() => {
     const target = new Date();
@@ -139,7 +164,6 @@ export const MainScreen: React.FC = () => {
   const updateDOM = (y: number) => {
     if (!sheetRef.current || !topContentRef.current) return;
     
-    // Если мы в режиме редактирования, история переводов уезжает вниз, а настройки поднимаются
     if (isEditMode) {
       sheetRef.current.style.transform = `translate3d(0, 100dvh, 0)`;
       sheetRef.current.style.transition = AUTH_TRANSITION;
@@ -214,12 +238,9 @@ export const MainScreen: React.FC = () => {
   const toggleEditMode = () => {
     if (!isEditMode) {
       setTempStyleId(savedStyleId);
-      setTempShowChip(savedShowChip);
-      
-      // Возвращаем карту к полному размеру перед открытием редактора
+      setTempBgId(savedBgId);
       targetY.current = MAX_Y;
       currentY.current = MAX_Y;
-      
       setIsEditMode(true);
       setIsFlipped(false);
     } else {
@@ -229,7 +250,7 @@ export const MainScreen: React.FC = () => {
 
   const handleSave = () => {
     setSavedStyleId(tempStyleId);
-    setSavedShowChip(tempShowChip);
+    setSavedBgId(tempBgId);
     setIsEditMode(false);
   };
 
@@ -242,11 +263,12 @@ export const MainScreen: React.FC = () => {
   }, [isEditMode]);
 
   return (
-    <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col bg-[#5491D0] select-none">
+    <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col bg-black select-none">
       <div
-        className="absolute top-0 left-[-50px] right-[-50px] bottom-0 bg-cover bg-center pointer-events-none will-change-transform"
+        className="absolute top-0 left-[-50px] right-[-50px] bottom-0 bg-cover bg-center pointer-events-none will-change-transform transition-opacity duration-200 ease-in-out"
         style={{
-          backgroundImage: 'url(/background2.png)',
+          backgroundImage: `url(${currentBgImage})`,
+          opacity: bgOpacity,
           transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.12)`,
         }}
       />
@@ -259,13 +281,13 @@ export const MainScreen: React.FC = () => {
           <JellyButton
             type="button"
             onClick={toggleEditMode}
-            flashColor="bg-white/20"
-            className="w-11 h-11 rounded-full bg-white/15 border border-white/20 backdrop-blur-xl flex items-center justify-center"
+            flashColor="bg-white/15"
+            className="w-11 h-11 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center"
           >
             <img
               src={isEditMode ? "/close.png" : "/edit.png"}
               alt="Toggle Mode"
-              className="w-5 h-5 object-contain brightness-0 invert opacity-90 pointer-events-none"
+              className="w-5 h-5 object-contain brightness-0 invert opacity-75 pointer-events-none"
             />
           </JellyButton>
         </div>
@@ -289,11 +311,9 @@ export const MainScreen: React.FC = () => {
                 </span>
               </div>
               
-              {activeShowChip && (
-                <div className="absolute top-[48px] right-[20px]">
-                  <EMVChip />
-                </div>
-              )}
+              <div className="absolute top-[48px] right-[20px]">
+                <EMVChip />
+              </div>
 
               <div className="w-full flex justify-between items-end mt-auto">
                 <div className="flex flex-col">
@@ -328,37 +348,36 @@ export const MainScreen: React.FC = () => {
         <div className="w-full max-w-[340px] flex gap-3 mt-3.5">
           <JellyButton
             type="button"
-            flashColor="bg-white/20"
-            className="flex-1 h-12 rounded-full bg-white/15 border border-white/20 backdrop-blur-xl flex items-center justify-center gap-2"
+            flashColor="bg-white/15"
+            className="flex-1 h-12 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center gap-2"
           >
             <img
               src="/share.png"
               alt="Share"
-              className="w-4 h-4 object-contain brightness-0 invert opacity-90 pointer-events-none"
+              className="w-4 h-4 object-contain brightness-0 invert opacity-75 pointer-events-none"
             />
-            <span className="text-white/95 text-[15px] font-medium tracking-wide">
+            <span className="text-white/90 text-[15px] font-medium tracking-wide">
               Перевод
             </span>
           </JellyButton>
 
           <JellyButton
             type="button"
-            flashColor="bg-white/20"
-            className="flex-1 h-12 rounded-full bg-white/15 border border-white/20 backdrop-blur-xl flex items-center justify-center gap-2"
+            flashColor="bg-white/15"
+            className="flex-1 h-12 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center gap-2"
           >
             <img
               src="/request.png"
               alt="Request"
-              className="w-4 h-4 object-contain brightness-0 invert opacity-90 pointer-events-none"
+              className="w-4 h-4 object-contain brightness-0 invert opacity-75 pointer-events-none"
             />
-            <span className="text-white/95 text-[15px] font-medium tracking-wide">
+            <span className="text-white/90 text-[15px] font-medium tracking-wide">
               Запросить
             </span>
           </JellyButton>
         </div>
       </div>
 
-      {/* Экран Истории Переводов */}
       <div
         ref={sheetRef}
         className="absolute inset-x-0 z-20 bg-white rounded-t-[36px] flex flex-col items-center shadow-[-0px_-10px_35px_rgba(0,0,0,0.15)] will-change-transform"
@@ -417,7 +436,6 @@ export const MainScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Экран Редактирования Карты */}
       <div
         className="absolute inset-x-0 z-30 bg-white rounded-t-[36px] flex flex-col items-center shadow-[-0px_-10px_35px_rgba(0,0,0,0.15)] will-change-transform"
         style={{
@@ -427,106 +445,80 @@ export const MainScreen: React.FC = () => {
           transition: AUTH_TRANSITION,
         }}
       >
-        <div className="w-full pt-3 pb-3 flex flex-col items-center flex-shrink-0">
+        <div className="w-full pt-3 pb-2 flex flex-col items-center flex-shrink-0">
           <div className="w-9 h-1.5 rounded-full bg-black/15 pointer-events-none" />
         </div>
 
-        <div className="w-full max-w-[340px] px-2 pb-8 flex-1 overflow-y-auto scroll-y-touch flex flex-col">
-          <p className="text-[#8E8E93] text-[12px] font-medium tracking-wide uppercase px-3 mb-2.5 mt-1">
-            Цвет карты
-          </p>
+        <div className="w-full max-w-[340px] px-2 pb-8 flex-1 overflow-y-auto scroll-y-touch flex flex-col justify-between">
+          <div className="flex flex-col">
+            <p className="text-[#8E8E93] text-[13px] font-medium tracking-tight px-1 mb-2">
+              Цвет карты
+            </p>
 
-          <div className="w-full flex justify-between px-2 mb-6">
-            {cardStyles.map((style) => (
-              <button
-                key={style.id}
-                onClick={() => setTempStyleId(style.id)}
-                className="flex flex-col items-center gap-1.5 flex-shrink-0"
-              >
-                <div 
-                  className="w-12 h-12 rounded-full flex items-center justify-center border-2 transition-colors duration-300"
-                  style={{ borderColor: tempStyleId === style.id ? style.accentColor : 'transparent' }}
-                >
-                  <div className={`w-10 h-10 rounded-full ${style.bgClass} border border-black/[0.08] shadow-sm`} />
-                </div>
-                <span className={`text-[11px] font-medium transition-colors duration-200 ${tempStyleId === style.id ? 'text-black' : 'text-[#8E8E93]'}`}>
-                  {style.name}
-                </span>
-              </button>
-            ))}
-          </div>
-
-          <div className="w-full flex flex-col mt-2">
-            <span className="text-[#8E8E93] text-[12px] font-medium tracking-wide uppercase px-3 mb-2.5">
-              Прочее
-            </span>
-            
-            {/* Группа настроек (в стиле стекла) */}
-            <div className="w-full bg-black/[0.04] border border-black/[0.06] backdrop-blur-xl rounded-[20px] flex flex-col mx-1" style={{ width: 'calc(100% - 8px)' }}>
-              
-              {/* Показать чип */}
-              <div className="w-full p-3.5 flex flex-col">
-                <div className="w-full flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-black/5 flex items-center justify-center">
-                      <img src="/chip.png" alt="Chip" className="w-4 h-4 object-contain opacity-80" />
-                    </div>
-                    <span className="text-black text-[15px] font-semibold tracking-tight">
-                      Показать чип
-                    </span>
-                  </div>
+            <div className="w-full flex justify-between px-1 mb-5">
+              {cardStyles.map((style) => {
+                const isSelected = tempStyleId === style.id;
+                return (
                   <button
-                    onClick={() => setTempShowChip(!tempShowChip)}
-                    className="w-12 h-7 rounded-full relative transition-colors duration-300"
-                    style={{ backgroundColor: tempShowChip ? activeStyle.accentColor : '#E5E5EA' }}
+                    key={style.id}
+                    onClick={() => setTempStyleId(style.id)}
+                    className="flex flex-col items-center gap-1.5 flex-shrink-0"
                   >
-                    <div className={`absolute top-[2px] left-[2px] w-6 h-6 bg-white rounded-full shadow-sm transition-transform duration-300 ${tempShowChip ? 'translate-x-5' : 'translate-x-0'}`} />
-                  </button>
-                </div>
-                <p className="text-[#8E8E93] text-[12px] leading-snug mt-2.5 px-1">
-                  Включает визуальный чип на Вашей карте.
-                </p>
-              </div>
-
-              <div className="h-[1px] bg-black/5 mx-4" />
-
-              {/* Уведомления */}
-              <div className="w-full p-3.5 flex flex-col">
-                <div className="w-full flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-black/5 flex items-center justify-center">
-                      {/* Generic notification bell icon internally */}
-                      <svg className="w-4 h-4 opacity-75" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/>
-                      </svg>
+                    <div 
+                      className="w-11 h-11 rounded-full flex items-center justify-center border-2 transition-colors duration-200"
+                      style={{ borderColor: isSelected ? style.accentColor : 'transparent' }}
+                    >
+                      <div 
+                        className={`w-9 h-9 rounded-full ${style.bgClass} border border-black/[0.08] shadow-sm transition-transform duration-200 ${
+                          isSelected ? 'scale-[0.82]' : 'scale-100'
+                        }`} 
+                      />
                     </div>
-                    <span className="text-black text-[15px] font-semibold tracking-tight">
-                      Уведомления о действиях
+                    <span className={`text-[11px] font-medium transition-colors duration-200 ${isSelected ? 'text-black' : 'text-[#8E8E93]'}`}>
+                      {style.name}
                     </span>
-                  </div>
-                  <button
-                    onClick={() => setTempNotifs(!tempNotifs)}
-                    className="w-12 h-7 rounded-full relative transition-colors duration-300"
-                    style={{ backgroundColor: tempNotifs ? activeStyle.accentColor : '#E5E5EA' }}
-                  >
-                    <div className={`absolute top-[2px] left-[2px] w-6 h-6 bg-white rounded-full shadow-sm transition-transform duration-300 ${tempNotifs ? 'translate-x-5' : 'translate-x-0'}`} />
                   </button>
-                </div>
-                <p className="text-[#8E8E93] text-[12px] leading-snug mt-2.5 px-1">
-                  Уведомляет о новых переводах и статусах.
-                </p>
-              </div>
+                );
+              })}
+            </div>
 
+            <p className="text-[#8E8E93] text-[13px] font-medium tracking-tight px-1 mb-2.5">
+              Фон
+            </p>
+
+            <div className="w-full grid grid-cols-3 gap-2.5 px-1">
+              {backgroundOptions.map((bg) => {
+                const isSelected = tempBgId === bg.id;
+                return (
+                  <button
+                    key={bg.id}
+                    onClick={() => setTempBgId(bg.id)}
+                    className="flex flex-col items-center gap-1.5"
+                  >
+                    <div
+                      className={`w-full aspect-[9/13] rounded-[18px] overflow-hidden border-2 transition-all duration-200 p-[2px] ${
+                        isSelected ? 'border-black scale-[0.98]' : 'border-transparent'
+                      }`}
+                    >
+                      <div
+                        className="w-full h-full rounded-[14px] bg-cover bg-center border border-black/5"
+                        style={{ backgroundImage: `url(${bg.image})` }}
+                      />
+                    </div>
+                    <span className={`text-[12px] font-medium transition-colors duration-200 ${isSelected ? 'text-black' : 'text-[#8E8E93]'}`}>
+                      {bg.name}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
-
-          <div className="flex-1" />
 
           <JellyButton
             type="button"
             onClick={handleSave}
             flashColor="bg-black/10"
-            className="w-full h-12 rounded-full flex items-center justify-center font-semibold text-[16px] shadow-sm mt-6 mb-2 transition-colors duration-300"
+            className="w-full h-12 rounded-full flex items-center justify-center font-semibold text-[16px] shadow-sm mt-5 mb-2 transition-colors duration-300"
             style={{ 
               backgroundColor: activeStyle.accentColor,
               color: activeStyle.id === 'vanilla' ? '#19181F' : '#FFFFFF'
