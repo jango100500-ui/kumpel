@@ -28,21 +28,20 @@ type CardStyle = {
   bgClass: string;
   textClass: string;
   accentColor: string;
-  isGlass?: boolean;
+  isDarkLogo?: boolean;
 };
 
 const cardStyles: CardStyle[] = [
-  { id: 'classic', name: 'Классика', bgClass: 'bg-[#E33125]', textClass: 'text-[#19181F]', accentColor: '#E33125' },
-  { id: 'dark', name: 'Темный', bgClass: 'bg-[#1C1C1E]', textClass: 'text-white', accentColor: '#1C1C1E' },
-  { id: 'honey', name: 'Медовый', bgClass: 'bg-[#E5A93C]', textClass: 'text-[#19181F]', accentColor: '#E5A93C' },
-  { id: 'coffee', name: 'Кофейный', bgClass: 'bg-[#4A3B32]', textClass: 'text-white', accentColor: '#4A3B32' },
-  { id: 'vanilla', name: 'Ванильный', bgClass: 'bg-[#F3E5AB]', textClass: 'text-[#19181F]', accentColor: '#D4C381' },
-  { id: 'glass', name: 'Стеклянный', bgClass: 'bg-white/20 border border-white/30 backdrop-blur-xl', textClass: 'text-white', accentColor: '#8E8E93', isGlass: true },
+  { id: 'classic', name: 'Классика', bgClass: 'bg-[#E33125]', textClass: 'text-[#19181F]', accentColor: '#E33125', isDarkLogo: true },
+  { id: 'honey', name: 'Медовый', bgClass: 'bg-[#E5A93C]', textClass: 'text-[#19181F]', accentColor: '#E5A93C', isDarkLogo: true },
+  { id: 'vanilla', name: 'Ванильный', bgClass: 'bg-[#F3E5AB]', textClass: 'text-[#19181F]', accentColor: '#D4C381', isDarkLogo: true },
+  { id: 'coffee', name: 'Кофейный', bgClass: 'bg-[#4A3B32]', textClass: 'text-white', accentColor: '#4A3B32', isDarkLogo: false },
+  { id: 'dark', name: 'Темный', bgClass: 'bg-[#1C1C1E]', textClass: 'text-white', accentColor: '#1C1C1E', isDarkLogo: false },
 ];
 
 const MIN_Y = 56;
 const MAX_Y = 380;
-const AUTH_TRANSITION = 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1), opacity 450ms cubic-bezier(0.32, 0.72, 0, 1)';
+const AUTH_TRANSITION = 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)';
 
 const AnimatedDigit: React.FC<{ value: string }> = ({ value }) => {
   const [current, setCurrent] = useState(value);
@@ -67,13 +66,13 @@ const AnimatedDigit: React.FC<{ value: string }> = ({ value }) => {
 };
 
 const EMVChip: React.FC = () => (
-  <div className="w-10 h-[28px] rounded-md bg-gradient-to-br from-[#E6C27A] via-[#FFD700] to-[#D4AF37] border border-[#B8860B]/50 relative overflow-hidden flex items-center justify-center shadow-sm opacity-90">
-    <div className="absolute inset-x-0 top-1/4 h-[0.5px] bg-[#8B6508]/40" />
-    <div className="absolute inset-x-0 top-1/2 h-[0.5px] bg-[#8B6508]/40" />
-    <div className="absolute inset-x-0 top-3/4 h-[0.5px] bg-[#8B6508]/40" />
-    <div className="absolute inset-y-0 left-1/4 w-[0.5px] bg-[#8B6508]/40" />
-    <div className="absolute inset-y-0 right-1/4 w-[0.5px] bg-[#8B6508]/40" />
-    <div className="w-3.5 h-4 rounded-full border-[0.5px] border-[#8B6508]/40" />
+  <div className="w-10 h-[28px] rounded-md bg-gradient-to-br from-[#D1D1D6] via-[#E5E5EA] to-[#C7C7CC] border border-[#8E8E93]/50 relative overflow-hidden flex items-center justify-center shadow-sm opacity-90">
+    <div className="absolute inset-x-0 top-1/4 h-[0.5px] bg-[#8E8E93]/40" />
+    <div className="absolute inset-x-0 top-1/2 h-[0.5px] bg-[#8E8E93]/40" />
+    <div className="absolute inset-x-0 top-3/4 h-[0.5px] bg-[#8E8E93]/40" />
+    <div className="absolute inset-y-0 left-1/4 w-[0.5px] bg-[#8E8E93]/40" />
+    <div className="absolute inset-y-0 right-1/4 w-[0.5px] bg-[#8E8E93]/40" />
+    <div className="w-3.5 h-4 rounded-full border-[0.5px] border-[#8E8E93]/40" />
   </div>
 );
 
@@ -101,6 +100,7 @@ export const MainScreen: React.FC = () => {
 
   const [tempStyleId, setTempStyleId] = useState('classic');
   const [tempShowChip, setTempShowChip] = useState(false);
+  const [tempNotifs, setTempNotifs] = useState(false);
 
   const activeStyle = cardStyles.find((s) => s.id === (isEditMode ? tempStyleId : savedStyleId)) || cardStyles[0];
   const activeShowChip = isEditMode ? tempShowChip : savedShowChip;
@@ -138,12 +138,18 @@ export const MainScreen: React.FC = () => {
 
   const updateDOM = (y: number) => {
     if (!sheetRef.current || !topContentRef.current) return;
+    
+    // Если мы в режиме редактирования, история переводов уезжает вниз, а настройки поднимаются
+    if (isEditMode) {
+      sheetRef.current.style.transform = `translate3d(0, 100dvh, 0)`;
+      sheetRef.current.style.transition = AUTH_TRANSITION;
+    } else {
+      sheetRef.current.style.transform = `translate3d(0, ${y - MIN_Y}px, 0)`;
+      sheetRef.current.style.transition = isDraggingSheet.current ? 'none' : 'transform 400ms cubic-bezier(0.16, 1, 0.3, 1)';
+    }
+
     const clampedY = Math.max(MIN_Y, Math.min(MAX_Y, y));
     const progress = (clampedY - MIN_Y) / (MAX_Y - MIN_Y);
-
-    if (!isEditMode) {
-      sheetRef.current.style.transform = `translate3d(0, ${y}px, 0)`;
-    }
 
     const scale = 0.92 + 0.08 * progress;
     const translateY = -15 * (1 - progress);
@@ -152,8 +158,6 @@ export const MainScreen: React.FC = () => {
 
     topContentRef.current.style.transform = `scale(${scale}) translate3d(0, ${translateY}px, 0)`;
     topContentRef.current.style.opacity = `${opacity}`;
-    
-    // Исправление пропадания эффекта стекла: выключаем filter у родителя, если блюр не нужен.
     topContentRef.current.style.filter = blurAmount > 0.1 ? `blur(${blurAmount}px)` : 'none';
   };
 
@@ -211,6 +215,11 @@ export const MainScreen: React.FC = () => {
     if (!isEditMode) {
       setTempStyleId(savedStyleId);
       setTempShowChip(savedShowChip);
+      
+      // Возвращаем карту к полному размеру перед открытием редактора
+      targetY.current = MAX_Y;
+      currentY.current = MAX_Y;
+      
       setIsEditMode(true);
       setIsFlipped(false);
     } else {
@@ -281,7 +290,7 @@ export const MainScreen: React.FC = () => {
               </div>
               
               {activeShowChip && (
-                <div className="absolute top-[48px] left-[20px]">
+                <div className="absolute top-[48px] right-[20px]">
                   <EMVChip />
                 </div>
               )}
@@ -298,7 +307,7 @@ export const MainScreen: React.FC = () => {
                 <img
                   src="/logo.png"
                   alt="Bank Logo"
-                  className={`w-10 h-10 object-contain pointer-events-none ${activeStyle.isGlass || activeStyle.id === 'dark' || activeStyle.id === 'coffee' ? 'brightness-0 invert opacity-90' : 'brightness-0 opacity-90'}`}
+                  className={`w-10 h-10 object-contain pointer-events-none ${activeStyle.isDarkLogo ? 'brightness-0 opacity-90' : 'brightness-0 invert opacity-90'}`}
                 />
               </div>
             </div>
@@ -354,9 +363,8 @@ export const MainScreen: React.FC = () => {
         ref={sheetRef}
         className="absolute inset-x-0 z-20 bg-white rounded-t-[36px] flex flex-col items-center shadow-[-0px_-10px_35px_rgba(0,0,0,0.15)] will-change-transform"
         style={{
+          top: `${MIN_Y}px`,
           height: `calc(100dvh - ${MIN_Y}px)`,
-          transform: `translate3d(0, ${isEditMode ? '100dvh' : currentY.current + 'px'}, 0)`,
-          transition: isDraggingSheet.current ? 'none' : AUTH_TRANSITION,
         }}
       >
         <div
@@ -424,48 +432,92 @@ export const MainScreen: React.FC = () => {
         </div>
 
         <div className="w-full max-w-[340px] px-2 pb-8 flex-1 overflow-y-auto scroll-y-touch flex flex-col">
-          <p className="text-black text-[18px] font-bold tracking-tight mb-4 px-1">
+          <p className="text-[#8E8E93] text-[12px] font-medium tracking-wide uppercase px-3 mb-2.5 mt-1">
             Цвет карты
           </p>
 
-          <div className="w-full flex overflow-x-auto scroll-y-touch gap-3 pb-2 px-1">
+          <div className="w-full flex justify-between px-2 mb-6">
             {cardStyles.map((style) => (
               <button
                 key={style.id}
                 onClick={() => setTempStyleId(style.id)}
-                className="flex flex-col items-center gap-2 flex-shrink-0"
+                className="flex flex-col items-center gap-1.5 flex-shrink-0"
               >
-                <div className={`w-14 h-14 rounded-full flex items-center justify-center border-2 transition-colors duration-200 ${tempStyleId === style.id ? 'border-black' : 'border-transparent'}`}>
-                  <div className={`w-12 h-12 rounded-full ${style.bgClass} border ${style.isGlass ? 'border-black/10' : 'border-black/5'}`} />
+                <div 
+                  className="w-12 h-12 rounded-full flex items-center justify-center border-2 transition-colors duration-300"
+                  style={{ borderColor: tempStyleId === style.id ? style.accentColor : 'transparent' }}
+                >
+                  <div className={`w-10 h-10 rounded-full ${style.bgClass} border border-black/[0.08] shadow-sm`} />
                 </div>
-                <span className={`text-[12px] font-medium ${tempStyleId === style.id ? 'text-black' : 'text-[#8E8E93]'}`}>
+                <span className={`text-[11px] font-medium transition-colors duration-200 ${tempStyleId === style.id ? 'text-black' : 'text-[#8E8E93]'}`}>
                   {style.name}
                 </span>
               </button>
             ))}
           </div>
 
-          <div className="w-full mt-6 bg-black/[0.04] rounded-[20px] p-4 flex flex-col">
-            <div className="w-full flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-black/[0.05] flex items-center justify-center">
-                  <img src="/chip.png" alt="Chip" className="w-5 h-5 object-contain opacity-80" />
+          <div className="w-full flex flex-col mt-2">
+            <span className="text-[#8E8E93] text-[12px] font-medium tracking-wide uppercase px-3 mb-2.5">
+              Прочее
+            </span>
+            
+            {/* Группа настроек (в стиле стекла) */}
+            <div className="w-full bg-black/[0.04] border border-black/[0.06] backdrop-blur-xl rounded-[20px] flex flex-col mx-1" style={{ width: 'calc(100% - 8px)' }}>
+              
+              {/* Показать чип */}
+              <div className="w-full p-3.5 flex flex-col">
+                <div className="w-full flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-black/5 flex items-center justify-center">
+                      <img src="/chip.png" alt="Chip" className="w-4 h-4 object-contain opacity-80" />
+                    </div>
+                    <span className="text-black text-[15px] font-semibold tracking-tight">
+                      Показать чип
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setTempShowChip(!tempShowChip)}
+                    className="w-12 h-7 rounded-full relative transition-colors duration-300"
+                    style={{ backgroundColor: tempShowChip ? activeStyle.accentColor : '#E5E5EA' }}
+                  >
+                    <div className={`absolute top-[2px] left-[2px] w-6 h-6 bg-white rounded-full shadow-sm transition-transform duration-300 ${tempShowChip ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </button>
                 </div>
-                <span className="text-black text-[15px] font-semibold tracking-tight">
-                  Показать чип
-                </span>
+                <p className="text-[#8E8E93] text-[12px] leading-snug mt-2.5 px-1">
+                  Включает визуальный чип на Вашей карте.
+                </p>
               </div>
-              <button
-                onClick={() => setTempShowChip(!tempShowChip)}
-                className="w-12 h-7 rounded-full relative transition-colors duration-300"
-                style={{ backgroundColor: tempShowChip ? activeStyle.accentColor : '#E5E5EA' }}
-              >
-                <div className={`absolute top-[2px] left-[2px] w-6 h-6 bg-white rounded-full shadow-sm transition-transform duration-300 ${tempShowChip ? 'translate-x-5' : 'translate-x-0'}`} />
-              </button>
+
+              <div className="h-[1px] bg-black/5 mx-4" />
+
+              {/* Уведомления */}
+              <div className="w-full p-3.5 flex flex-col">
+                <div className="w-full flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-black/5 flex items-center justify-center">
+                      {/* Generic notification bell icon internally */}
+                      <svg className="w-4 h-4 opacity-75" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/>
+                      </svg>
+                    </div>
+                    <span className="text-black text-[15px] font-semibold tracking-tight">
+                      Уведомления о действиях
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setTempNotifs(!tempNotifs)}
+                    className="w-12 h-7 rounded-full relative transition-colors duration-300"
+                    style={{ backgroundColor: tempNotifs ? activeStyle.accentColor : '#E5E5EA' }}
+                  >
+                    <div className={`absolute top-[2px] left-[2px] w-6 h-6 bg-white rounded-full shadow-sm transition-transform duration-300 ${tempNotifs ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+                <p className="text-[#8E8E93] text-[12px] leading-snug mt-2.5 px-1">
+                  Уведомляет о новых переводах и статусах.
+                </p>
+              </div>
+
             </div>
-            <p className="text-[#8E8E93] text-[12px] font-normal leading-snug mt-3">
-              Включает визуальный чип на Вашей карте.
-            </p>
           </div>
 
           <div className="flex-1" />
@@ -474,7 +526,7 @@ export const MainScreen: React.FC = () => {
             type="button"
             onClick={handleSave}
             flashColor="bg-black/10"
-            className="w-full h-12 rounded-full flex items-center justify-center font-semibold text-[16px] shadow-sm mt-6 transition-colors duration-300"
+            className="w-full h-12 rounded-full flex items-center justify-center font-semibold text-[16px] shadow-sm mt-6 mb-2 transition-colors duration-300"
             style={{ 
               backgroundColor: activeStyle.accentColor,
               color: activeStyle.id === 'vanilla' ? '#19181F' : '#FFFFFF'
