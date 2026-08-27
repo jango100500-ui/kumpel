@@ -14,10 +14,11 @@ export const App: React.FC = () => {
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden bg-black select-none">
       <div
-        className="absolute inset-0 w-full h-full will-change-transform pointer-events-none"
+        className="absolute inset-0 w-full h-full will-change-transform"
         style={{
           transform: isTransitioning ? 'translateX(-30%)' : 'translateX(0%)',
           transition: 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)',
+          pointerEvents: isTransitioning ? 'none' : 'auto',
         }}
       >
         <AuthScreen onSignIn={handleSignIn} />
