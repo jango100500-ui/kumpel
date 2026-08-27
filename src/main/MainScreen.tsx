@@ -15,12 +15,12 @@ export const MainScreen: React.FC = () => {
         }}
       />
 
-      <div className="relative z-10 w-full px-5 pt-8 pb-6 flex flex-col items-center">
-        <div className="w-full flex justify-end mb-6">
+      <div className="relative z-10 w-full px-5 pt-3 pb-4 flex flex-col items-center">
+        <div className="w-full flex justify-end mb-3">
           <JellyButton
             type="button"
             flashColor="bg-white/15"
-            className="w-12 h-12 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center"
+            className="w-11 h-11 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center"
           >
             <img
               src="/edit.png"
@@ -30,9 +30,9 @@ export const MainScreen: React.FC = () => {
           </JellyButton>
         </div>
 
-        <div className="relative w-full max-w-[340px] aspect-[1.586/1] bg-[#E33125] rounded-[24px] p-6 flex flex-col justify-between overflow-hidden shadow-lg">
+        <div className="relative w-full max-w-[340px] aspect-[1.75/1] bg-[#E33125] rounded-[24px] p-5 flex flex-col justify-between overflow-hidden shadow-lg">
           <div className="w-full flex justify-start items-start">
-            <span className="text-[#19181F] text-[18px] font-semibold tracking-wide">
+            <span className="text-[#19181F] text-[17px] font-semibold tracking-wide">
               Kumpel
             </span>
           </div>
@@ -49,12 +49,12 @@ export const MainScreen: React.FC = () => {
             <img
               src="/logo.png"
               alt="Bank Logo"
-              className="w-11 h-11 object-contain pointer-events-none"
+              className="w-10 h-10 object-contain brightness-0 opacity-90 pointer-events-none"
             />
           </div>
         </div>
 
-        <div className="w-full max-w-[340px] flex gap-3 mt-5">
+        <div className="w-full max-w-[340px] flex gap-3 mt-4">
           <JellyButton
             type="button"
             flashColor="bg-white/15"
