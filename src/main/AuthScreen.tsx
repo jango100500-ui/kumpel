@@ -1,13 +1,14 @@
 import React from 'react';
 import { useLocalization } from '@/mechanics/localization';
 import { useOrientation } from '@/mechanics/useOrientation';
+import { JellyButton } from '@/uis/JellyButton';
 
 export const AuthScreen: React.FC = () => {
   const loc = useLocalization();
   const tilt = useOrientation(18);
 
   return (
-    <div className="relative w-full h-full min-h-[100dvh] overflow-hidden flex flex-col justify-between select-none">
+    <div className="relative w-full h-full min-h-[100dvh] overflow-hidden flex flex-col justify-between select-none bg-black">
       <div
         className="absolute inset-[-40px] bg-cover bg-center pointer-events-none transition-transform duration-75 ease-out"
         style={{
@@ -20,61 +21,65 @@ export const AuthScreen: React.FC = () => {
 
       <div className="relative z-10 w-full px-7 pb-10 flex flex-col items-center">
         <div className="w-full max-w-[340px] flex flex-col items-center text-center">
-          <h1 className="text-white text-[32px] font-semibold tracking-tight leading-tight">
+          <h1 className="text-white text-[24px] font-semibold tracking-tight leading-tight">
             {loc.welcomeTitle}
           </h1>
-          <p className="text-white/75 text-[17px] font-normal mt-1 mb-8">
+          <h2 className="text-white/75 text-[24px] font-semibold tracking-tight leading-tight mt-1 mb-8">
             {loc.welcomeSubtitle}
-          </p>
+          </h2>
 
-          <button
+          <JellyButton
             type="button"
-            className="w-full h-14 bg-white text-black text-[17px] font-semibold rounded-full shadow-lg active:scale-[0.98] transition-transform duration-150 flex items-center justify-center"
+            flashColor="bg-black/10"
+            className="w-full h-14 bg-white text-black text-[17px] font-semibold rounded-full flex items-center justify-center shadow-none"
           >
             {loc.signIn}
-          </button>
+          </JellyButton>
 
           <div className="w-full flex items-center justify-center my-5">
-            <div className="h-[0.5px] bg-white/25 flex-1" />
-            <span className="px-3 text-white/50 text-[13px] font-medium tracking-wide">
+            <div className="h-[0.5px] bg-white/60 flex-1" />
+            <span className="px-3 text-white/60 text-[13px] font-medium tracking-wide">
               {loc.or}
             </span>
-            <div className="h-[0.5px] bg-white/25 flex-1" />
+            <div className="h-[0.5px] bg-white/60 flex-1" />
           </div>
 
           <div className="w-full grid grid-cols-3 gap-3">
-            <button
+            <JellyButton
               type="button"
-              className="h-14 rounded-full bg-white/15 border border-white/25 backdrop-blur-md flex items-center justify-center active:scale-95 transition-transform duration-150"
+              flashColor="bg-white/30"
+              className="h-14 rounded-full bg-white/15 border border-white/25 backdrop-blur-md flex items-center justify-center"
             >
               <img
                 src="/google.png"
                 alt="Google"
-                className="w-6 h-6 object-contain opacity-75 pointer-events-none"
+                className="w-6 h-6 object-contain brightness-0 invert opacity-75 pointer-events-none"
               />
-            </button>
+            </JellyButton>
 
-            <button
+            <JellyButton
               type="button"
-              className="h-14 rounded-full bg-white/15 border border-white/25 backdrop-blur-md flex items-center justify-center active:scale-95 transition-transform duration-150"
+              flashColor="bg-white/30"
+              className="h-14 rounded-full bg-white/15 border border-white/25 backdrop-blur-md flex items-center justify-center"
             >
               <img
                 src="/apple.png"
                 alt="Apple"
-                className="w-6 h-6 object-contain opacity-75 pointer-events-none"
+                className="w-6 h-6 object-contain brightness-0 invert opacity-75 pointer-events-none"
               />
-            </button>
+            </JellyButton>
 
-            <button
+            <JellyButton
               type="button"
-              className="h-14 rounded-full bg-white/15 border border-white/25 backdrop-blur-md flex items-center justify-center active:scale-95 transition-transform duration-150"
+              flashColor="bg-white/30"
+              className="h-14 rounded-full bg-white/15 border border-white/25 backdrop-blur-md flex items-center justify-center"
             >
               <img
-                src="/post.png"
-                alt="Post"
-                className="w-6 h-6 object-contain opacity-75 pointer-events-none"
+                src="/telegram.png"
+                alt="Telegram"
+                className="w-6 h-6 object-contain brightness-0 invert opacity-75 pointer-events-none"
               />
-            </button>
+            </JellyButton>
           </div>
 
           <p className="mt-8 text-white/60 text-[12px] leading-relaxed text-center">
