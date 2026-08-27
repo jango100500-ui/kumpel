@@ -42,7 +42,7 @@ export const MainScreen: React.FC = () => {
   const tilt = useOrientation(22);
 
   return (
-    <div className="relative w-full h-full min-h-[100dvh] overflow-hidden flex flex-col bg-[#5491D0] select-none">
+    <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col justify-between bg-[#5491D0] select-none">
       <div
         className="absolute top-0 left-[-50px] right-[-50px] bottom-0 bg-cover bg-center pointer-events-none will-change-transform"
         style={{
@@ -51,8 +51,8 @@ export const MainScreen: React.FC = () => {
         }}
       />
 
-      <div className="relative z-10 w-full px-5 pt-3 pb-4 flex flex-col items-center">
-        <div className="w-full flex justify-end mb-3">
+      <div className="relative z-10 w-full px-5 pt-3 pb-3 flex flex-col items-center flex-shrink-0">
+        <div className="w-full flex justify-end mb-2.5">
           <JellyButton
             type="button"
             flashColor="bg-white/15"
@@ -90,7 +90,7 @@ export const MainScreen: React.FC = () => {
           </div>
         </div>
 
-        <div className="w-full max-w-[340px] flex gap-3 mt-4">
+        <div className="w-full max-w-[340px] flex gap-3 mt-3.5">
           <JellyButton
             type="button"
             flashColor="bg-white/15"
@@ -118,8 +118,8 @@ export const MainScreen: React.FC = () => {
         </div>
       </div>
 
-      <div className="relative z-10 w-full flex-1 bg-white rounded-t-[36px] pt-4 px-6 pb-6 flex flex-col items-center overflow-y-auto">
-        <p className="text-[#8E8E93] text-[13px] font-medium tracking-tight mb-4 text-center">
+      <div className="relative z-10 w-full flex-1 bg-white rounded-t-[36px] pt-4 px-5 pb-6 flex flex-col items-center overflow-hidden">
+        <p className="text-[#8E8E93] text-[13px] font-medium tracking-tight mb-3 text-center">
           История переводов
         </p>
 
@@ -127,32 +127,28 @@ export const MainScreen: React.FC = () => {
           {mockTransactions.map((tx) => (
             <div
               key={tx.id}
-              className="w-full p-3 rounded-[20px] bg-black/[0.04] border border-black/[0.04] backdrop-blur-md flex items-center justify-between"
+              className="w-full h-14 px-3.5 rounded-full bg-black/[0.04] border border-black/[0.04] flex items-center justify-between"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-black/[0.05] flex items-center justify-center">
+                <div className="w-9 h-9 rounded-full bg-black/[0.05] flex items-center justify-center flex-shrink-0">
                   <img
                     src="/transfer.png"
                     alt="Transfer"
-                    className="w-5 h-5 object-contain opacity-70"
+                    className="w-4 h-4 object-contain opacity-70"
                   />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-black text-[15px] font-semibold tracking-tight leading-snug">
+                  <span className="text-black text-[14px] font-semibold tracking-tight leading-tight">
                     {tx.name}
                   </span>
-                  <span className="text-[#8E8E93] text-[12px] font-normal leading-tight">
+                  <span className="text-[#8E8E93] text-[11px] font-normal leading-tight">
                     {tx.type}
                   </span>
                 </div>
               </div>
 
               <div className="flex flex-col items-end">
-                <span
-                  className={`text-[15px] font-semibold tracking-tight leading-snug ${
-                    tx.isPositive ? 'text-black' : 'text-black'
-                  }`}
-                >
+                <span className="text-black text-[14px] font-semibold tracking-tight leading-tight">
                   {tx.amount}
                 </span>
                 <span className="text-[#8E8E93] text-[11px] font-normal leading-tight">
