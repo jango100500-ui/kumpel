@@ -3,7 +3,11 @@ import { useLocalization } from '@/mechanics/localization';
 import { useOrientation } from '@/mechanics/useOrientation';
 import { JellyButton } from '@/uis/JellyButton';
 
-export const AuthScreen: React.FC = () => {
+interface AuthScreenProps {
+  onSignIn: () => void;
+}
+
+export const AuthScreen: React.FC<AuthScreenProps> = ({ onSignIn }) => {
   const loc = useLocalization();
   const tilt = useOrientation(22);
 
@@ -30,6 +34,7 @@ export const AuthScreen: React.FC = () => {
 
           <JellyButton
             type="button"
+            onClick={onSignIn}
             flashColor="bg-black/10"
             className="w-full h-12 bg-white text-black text-[16px] font-semibold rounded-full flex items-center justify-center shadow-none"
           >
