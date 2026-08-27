@@ -1,12 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useOrientation } from '@/mechanics/useOrientation';
 import { JellyButton } from '@/uis/JellyButton';
-import {
-  CardStyle,
-  cardStyles,
-  BackgroundOption,
-  backgroundOptions,
-} from '@/mechanics/bankStore';
+import { cardStyles, backgroundOptions } from '@/mechanics/bankStore';
 
 interface Transaction {
   id: string;
