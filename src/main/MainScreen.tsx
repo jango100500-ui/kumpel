@@ -1,6 +1,12 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useOrientation } from '@/mechanics/useOrientation';
 import { JellyButton } from '@/uis/JellyButton';
+import {
+  CardStyle,
+  cardStyles,
+  BackgroundOption,
+  backgroundOptions,
+} from '@/mechanics/bankStore';
 
 interface Transaction {
   id: string;
@@ -22,38 +28,18 @@ const mockTransactions: Transaction[] = [
   { id: '8', name: 'Никита', type: 'Перевод', amount: '-600 ₽', isPositive: false, date: '18.07' },
 ];
 
-type CardStyle = {
-  id: string;
-  name: string;
-  bgClass: string;
-  textClass: string;
-  accentColor: string;
-  isDarkLogo?: boolean;
-};
-
-const cardStyles: CardStyle[] = [
-  { id: 'classic', name: 'Классика', bgClass: 'bg-[#E33125]', textClass: 'text-[#19181F]', accentColor: '#E33125', isDarkLogo: true },
-  { id: 'honey', name: 'Медовый', bgClass: 'bg-[#E5A93C]', textClass: 'text-[#19181F]', accentColor: '#E5A93C', isDarkLogo: true },
-  { id: 'vanilla', name: 'Ванильный', bgClass: 'bg-[#F3E5AB]', textClass: 'text-[#19181F]', accentColor: '#D4C381', isDarkLogo: true },
-  { id: 'coffee', name: 'Кофейный', bgClass: 'bg-[#4A3B32]', textClass: 'text-white', accentColor: '#4A3B32', isDarkLogo: false },
-  { id: 'dark', name: 'Темный', bgClass: 'bg-[#1C1C1E]', textClass: 'text-white', accentColor: '#1C1C1E', isDarkLogo: false },
-];
-
-type BackgroundOption = {
-  id: string;
-  name: string;
-  image: string;
-};
-
-const backgroundOptions: BackgroundOption[] = [
-  { id: 'classic', name: 'Классика', image: '/background2.png' },
-  { id: 'rain', name: 'Ливень', image: '/rain.png' },
-  { id: 'rise', name: 'Рассвет', image: '/rise.png' },
-];
-
 const MIN_Y = 56;
 const MAX_Y = 380;
 const AUTH_TRANSITION = 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)';
+
+interface MainScreenProps {
+  onOpenTransfer: () => void;
+  savedStyleId: string;
+  setSavedStyleId: (id: string) => void;
+  savedBgId: string;
+  setSavedBgId: (id: string) => void;
+  balance: number;
+}
 
 const AnimatedDigit: React.FC<{ value: string }> = ({ value }) => {
   const [current, setCurrent] = useState(value);
@@ -88,12 +74,19 @@ const EMVChip: React.FC = () => (
   </div>
 );
 
-export const MainScreen: React.FC = () => {
+export const MainScreen: React.FC<MainScreenProps> = ({
+  onOpenTransfer,
+  savedStyleId,
+  setSavedStyleId,
+  savedBgId,
+  setSavedBgId,
+  balance,
+}) => {
   const tilt = useOrientation(22);
 
   const sheetRef = useRef<HTMLDivElement>(null);
   const topContentRef = useRef<HTMLDivElement>(null);
-  
+
   const currentY = useRef(MAX_Y);
   const targetY = useRef(MAX_Y);
   const isDraggingSheet = useRef(false);
@@ -106,12 +99,9 @@ export const MainScreen: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState({ d: '0', h: '0', m: '0' });
 
   const [isEditMode, setIsEditMode] = useState(false);
-  
-  const [savedStyleId, setSavedStyleId] = useState('classic');
-  const [tempStyleId, setTempStyleId] = useState('classic');
 
-  const [savedBgId, setSavedBgId] = useState('classic');
-  const [tempBgId, setTempBgId] = useState('classic');
+  const [tempStyleId, setTempStyleId] = useState(savedStyleId);
+  const [tempBgId, setTempBgId] = useState(savedBgId);
 
   const [currentBgImage, setCurrentBgImage] = useState('/background2.png');
   const [bgOpacity, setBgOpacity] = useState(1);
@@ -163,7 +153,7 @@ export const MainScreen: React.FC = () => {
 
   const updateDOM = (y: number) => {
     if (!sheetRef.current || !topContentRef.current) return;
-    
+
     if (isEditMode) {
       sheetRef.current.style.transform = `translate3d(0, 100dvh, 0)`;
       sheetRef.current.style.transition = AUTH_TRANSITION;
@@ -231,7 +221,7 @@ export const MainScreen: React.FC = () => {
     if (velocity < -20) targetY.current = MIN_Y;
     else if (velocity > 20) targetY.current = MAX_Y;
     else targetY.current = currentY.current < (MAX_Y + MIN_Y) / 2 ? MIN_Y : MAX_Y;
-    
+
     rafId.current = requestAnimationFrame(smoothSnap);
   };
 
@@ -263,7 +253,7 @@ export const MainScreen: React.FC = () => {
   }, [isEditMode]);
 
   return (
-    <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col bg-black select-none">
+    <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col select-none">
       <div
         className="absolute top-0 left-[-50px] right-[-50px] bottom-0 bg-cover bg-center pointer-events-none will-change-transform transition-opacity duration-200 ease-in-out"
         style={{
@@ -285,7 +275,7 @@ export const MainScreen: React.FC = () => {
             className="w-11 h-11 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center"
           >
             <img
-              src={isEditMode ? "/close.png" : "/edit.png"}
+              src={isEditMode ? '/close.png' : '/edit.png'}
               alt="Toggle Mode"
               className="w-5 h-5 object-contain brightness-0 invert opacity-75 pointer-events-none"
             />
@@ -304,21 +294,23 @@ export const MainScreen: React.FC = () => {
               isFlipped ? 'rotate-y-180' : ''
             }`}
           >
-            <div className={`absolute inset-0 backface-hidden rounded-[24px] p-5 flex flex-col justify-between shadow-lg transition-colors duration-300 ${activeStyle.bgClass} ${activeStyle.textClass}`}>
+            <div
+              className={`absolute inset-0 backface-hidden rounded-[24px] p-5 flex flex-col justify-between shadow-lg transition-colors duration-300 ${activeStyle.bgClass} ${activeStyle.textClass}`}
+            >
               <div className="w-full flex justify-start items-start gap-3">
                 <span className="text-[17px] font-semibold tracking-wide">
                   Kumpel
                 </span>
               </div>
-              
+
               <div className="absolute top-[48px] right-[20px]">
                 <EMVChip />
               </div>
 
               <div className="w-full flex justify-between items-end mt-auto">
                 <div className="flex flex-col">
-                  <span className="text-[28px] font-bold tracking-tight leading-none mb-1">
-                    500₽
+                  <span className="text-[28px] font-bold tracking-tight leading-none mb-1 transition-all duration-300">
+                    {balance}₽
                   </span>
                   <span className="text-[15px] font-medium tracking-widest opacity-80">
                     ***5678
@@ -327,19 +319,32 @@ export const MainScreen: React.FC = () => {
                 <img
                   src="/logo.png"
                   alt="Bank Logo"
-                  className={`w-10 h-10 object-contain pointer-events-none ${activeStyle.isDarkLogo ? 'brightness-0 opacity-90' : 'brightness-0 invert opacity-90'}`}
+                  className={`w-10 h-10 object-contain pointer-events-none ${
+                    activeStyle.isDarkLogo ? 'brightness-0 opacity-90' : 'brightness-0 invert opacity-90'
+                  }`}
                 />
               </div>
             </div>
 
-            <div className={`absolute inset-0 backface-hidden rotate-y-180 rounded-[24px] p-5 flex flex-col items-center justify-center shadow-lg transition-colors duration-300 ${activeStyle.bgClass} ${activeStyle.textClass}`}>
+            <div
+              className={`absolute inset-0 backface-hidden rotate-y-180 rounded-[24px] p-5 flex flex-col items-center justify-center shadow-lg transition-colors duration-300 ${activeStyle.bgClass} ${activeStyle.textClass}`}
+            >
               <span className="text-[14px] font-semibold opacity-75 mb-1.5 text-center">
                 До еженедельного пополнения:
               </span>
               <div className="flex items-baseline text-[34px] font-bold tracking-tight gap-1.5 leading-none">
-                <div className="flex items-baseline"><AnimatedDigit value={timeLeft.d} /><span className="text-[18px] ml-0.5 opacity-90">д</span></div>
-                <div className="flex items-baseline"><AnimatedDigit value={timeLeft.h} /><span className="text-[18px] ml-0.5 opacity-90">ч</span></div>
-                <div className="flex items-baseline"><AnimatedDigit value={timeLeft.m} /><span className="text-[18px] ml-0.5 opacity-90">м</span></div>
+                <div className="flex items-baseline">
+                  <AnimatedDigit value={timeLeft.d} />
+                  <span className="text-[18px] ml-0.5 opacity-90">д</span>
+                </div>
+                <div className="flex items-baseline">
+                  <AnimatedDigit value={timeLeft.h} />
+                  <span className="text-[18px] ml-0.5 opacity-90">ч</span>
+                </div>
+                <div className="flex items-baseline">
+                  <AnimatedDigit value={timeLeft.m} />
+                  <span className="text-[18px] ml-0.5 opacity-90">м</span>
+                </div>
               </div>
             </div>
           </div>
@@ -348,6 +353,7 @@ export const MainScreen: React.FC = () => {
         <div className="w-full max-w-[340px] flex gap-3 mt-3.5">
           <JellyButton
             type="button"
+            onClick={onOpenTransfer}
             flashColor="bg-white/15"
             className="flex-1 h-12 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center gap-2"
           >
@@ -464,17 +470,21 @@ export const MainScreen: React.FC = () => {
                     onClick={() => setTempStyleId(style.id)}
                     className="flex flex-col items-center gap-1.5 flex-shrink-0"
                   >
-                    <div 
+                    <div
                       className="w-11 h-11 rounded-full flex items-center justify-center border-2 transition-colors duration-200"
                       style={{ borderColor: isSelected ? style.accentColor : 'transparent' }}
                     >
-                      <div 
+                      <div
                         className={`w-9 h-9 rounded-full ${style.bgClass} border border-black/[0.08] shadow-sm transition-transform duration-200 ${
                           isSelected ? 'scale-[0.82]' : 'scale-100'
-                        }`} 
+                        }`}
                       />
                     </div>
-                    <span className={`text-[11px] font-medium transition-colors duration-200 ${isSelected ? 'text-black' : 'text-[#8E8E93]'}`}>
+                    <span
+                      className={`text-[11px] font-medium transition-colors duration-200 ${
+                        isSelected ? 'text-black' : 'text-[#8E8E93]'
+                      }`}
+                    >
                       {style.name}
                     </span>
                   </button>
@@ -505,7 +515,11 @@ export const MainScreen: React.FC = () => {
                         style={{ backgroundImage: `url(${bg.image})` }}
                       />
                     </div>
-                    <span className={`text-[12px] font-medium transition-colors duration-200 ${isSelected ? 'text-black' : 'text-[#8E8E93]'}`}>
+                    <span
+                      className={`text-[12px] font-medium transition-colors duration-200 ${
+                        isSelected ? 'text-black' : 'text-[#8E8E93]'
+                      }`}
+                    >
                       {bg.name}
                     </span>
                   </button>
@@ -519,9 +533,9 @@ export const MainScreen: React.FC = () => {
             onClick={handleSave}
             flashColor="bg-black/10"
             className="w-full h-12 rounded-full flex items-center justify-center font-semibold text-[16px] shadow-sm mt-5 mb-2 transition-colors duration-300"
-            style={{ 
+            style={{
               backgroundColor: activeStyle.accentColor,
-              color: activeStyle.id === 'vanilla' ? '#19181F' : '#FFFFFF'
+              color: activeStyle.id === 'vanilla' ? '#19181F' : '#FFFFFF',
             }}
           >
             Сохранить
