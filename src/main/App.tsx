@@ -12,7 +12,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="relative w-full h-[100dvh] overflow-hidden bg-black select-none">
+    <div className="relative w-full h-[100dvh] overflow-hidden bg-[#5491D0] select-none">
       <div
         className="absolute inset-0 w-full h-full will-change-transform"
         style={{
