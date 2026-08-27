@@ -5,15 +5,15 @@ import { JellyButton } from '@/uis/JellyButton';
 
 export const AuthScreen: React.FC = () => {
   const loc = useLocalization();
-  const tilt = useOrientation(18);
+  const tilt = useOrientation(22);
 
   return (
-    <div className="relative w-full h-full min-h-[100dvh] overflow-hidden flex flex-col justify-between select-none bg-black">
+    <div className="relative w-full h-full min-h-[100dvh] overflow-hidden flex flex-col justify-between select-none bg-[#5292D0]">
       <div
-        className="absolute inset-[-40px] bg-cover bg-center pointer-events-none transition-transform duration-75 ease-out"
+        className="absolute inset-[-50px] bg-cover bg-center pointer-events-none will-change-transform"
         style={{
           backgroundImage: 'url(/background.png)',
-          transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.1)`,
+          transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.12)`,
         }}
       />
 
@@ -48,7 +48,7 @@ export const AuthScreen: React.FC = () => {
             <JellyButton
               type="button"
               flashColor="bg-white/30"
-              className="h-14 rounded-full bg-white/15 border border-white/25 backdrop-blur-md flex items-center justify-center"
+              className="h-14 rounded-full bg-white/15 border border-white/12 backdrop-blur-md flex items-center justify-center"
             >
               <img
                 src="/google.png"
@@ -60,7 +60,7 @@ export const AuthScreen: React.FC = () => {
             <JellyButton
               type="button"
               flashColor="bg-white/30"
-              className="h-14 rounded-full bg-white/15 border border-white/25 backdrop-blur-md flex items-center justify-center"
+              className="h-14 rounded-full bg-white/15 border border-white/12 backdrop-blur-md flex items-center justify-center"
             >
               <img
                 src="/apple.png"
@@ -72,7 +72,7 @@ export const AuthScreen: React.FC = () => {
             <JellyButton
               type="button"
               flashColor="bg-white/30"
-              className="h-14 rounded-full bg-white/15 border border-white/25 backdrop-blur-md flex items-center justify-center"
+              className="h-14 rounded-full bg-white/15 border border-white/12 backdrop-blur-md flex items-center justify-center"
             >
               <img
                 src="/telegram.png"
