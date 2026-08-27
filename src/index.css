@@ -25,6 +25,17 @@ html, body {
   inset: 0;
 }
 
+.scroll-y-touch {
+  touch-action: pan-y !important;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  scrollbar-width: none;
+}
+
+.scroll-y-touch::-webkit-scrollbar {
+  display: none;
+}
+
 @keyframes flash-ripple {
   0% {
     transform: translate(-50%, -50%) scale(0);
