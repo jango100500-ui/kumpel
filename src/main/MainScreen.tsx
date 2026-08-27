@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useOrientation } from '@/mechanics/useOrientation';
 import { JellyButton } from '@/uis/JellyButton';
 
@@ -22,73 +22,111 @@ const mockTransactions: Transaction[] = [
   { id: '8', name: 'Никита', type: 'Перевод', amount: '-600 ₽', isPositive: false, date: '18.07' },
 ];
 
+const MIN_Y = 56;
+const MAX_Y = 380;
+
 export const MainScreen: React.FC = () => {
   const tilt = useOrientation(22);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [dragOffset, setDragOffset] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
 
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const topContentRef = useRef<HTMLDivElement>(null);
+  
+  const currentY = useRef(MAX_Y);
+  const targetY = useRef(MAX_Y);
+  const isDragging = useRef(false);
   const dragStartY = useRef(0);
-  const currentDragOffset = useRef(0);
+  const startDragY = useRef(0);
+  const rafId = useRef<number>();
+
+  const updateDOM = (y: number) => {
+    if (!sheetRef.current || !topContentRef.current) return;
+
+    const clampedY = Math.max(MIN_Y, Math.min(MAX_Y, y));
+    const progress = (clampedY - MIN_Y) / (MAX_Y - MIN_Y);
+
+    sheetRef.current.style.transform = `translate3d(0, ${y - MIN_Y}px, 0)`;
+
+    const scale = 0.92 + 0.08 * progress;
+    const translateY = -15 * (1 - progress);
+    const opacity = 0.2 + 0.8 * progress;
+    const blur = 4 * (1 - progress);
+
+    topContentRef.current.style.transform = `scale(${scale}) translate3d(0, ${translateY}px, 0)`;
+    topContentRef.current.style.opacity = `${opacity}`;
+    topContentRef.current.style.filter = `blur(${blur}px)`;
+  };
+
+  const smoothSnap = () => {
+    if (isDragging.current) return;
+
+    const diff = targetY.current - currentY.current;
+    currentY.current += diff * 0.16;
+
+    updateDOM(currentY.current);
+
+    if (Math.abs(diff) > 0.5) {
+      rafId.current = requestAnimationFrame(smoothSnap);
+    } else {
+      currentY.current = targetY.current;
+      updateDOM(currentY.current);
+    }
+  };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    setIsDragging(true);
+    isDragging.current = true;
     dragStartY.current = e.clientY;
-    currentDragOffset.current = 0;
+    startDragY.current = currentY.current;
+    
+    if (rafId.current) cancelAnimationFrame(rafId.current);
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isDragging) return;
+    if (!isDragging.current) return;
 
-    const deltaY = e.clientY - dragStartY.current;
+    const delta = e.clientY - dragStartY.current;
+    let newY = startDragY.current + delta;
 
-    if (!isExpanded) {
-      if (deltaY < 0) {
-        currentDragOffset.current = deltaY;
-      } else {
-        currentDragOffset.current = deltaY * 0.2;
-      }
-    } else {
-      if (deltaY > 0) {
-        currentDragOffset.current = deltaY;
-      } else {
-        currentDragOffset.current = deltaY * 0.2;
-      }
+    if (newY < MIN_Y) {
+      const overshoot = MIN_Y - newY;
+      newY = MIN_Y - overshoot * 0.3;
     }
 
-    setDragOffset(currentDragOffset.current);
+    currentY.current = newY;
+    updateDOM(newY);
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isDragging) return;
-    setIsDragging(false);
+    if (!isDragging.current) return;
+    isDragging.current = false;
 
     try {
       (e.target as HTMLElement).releasePointerCapture(e.pointerId);
     } catch {}
 
-    const delta = currentDragOffset.current;
+    const delta = e.clientY - dragStartY.current;
+    const velocity = delta;
 
-    if (!isExpanded) {
-      if (delta < -70) {
-        setIsExpanded(true);
-      }
+    if (velocity < -20) {
+      targetY.current = MIN_Y;
+    } else if (velocity > 20) {
+      targetY.current = MAX_Y;
     } else {
-      if (delta > 70) {
-        setIsExpanded(false);
-      }
+      targetY.current = currentY.current < (MAX_Y + MIN_Y) / 2 ? MIN_Y : MAX_Y;
     }
 
-    setDragOffset(0);
-    currentDragOffset.current = 0;
+    rafId.current = requestAnimationFrame(smoothSnap);
   };
 
-  const sheetTop = isExpanded ? 54 : 375;
-  const targetTranslateY = isDragging ? dragOffset : 0;
+  useEffect(() => {
+    updateDOM(MAX_Y);
+    return () => {
+      if (rafId.current) cancelAnimationFrame(rafId.current);
+    };
+  }, []);
 
   return (
-    <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col justify-between bg-[#5491D0] select-none">
+    <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col bg-[#5491D0] select-none">
       <div
         className="absolute top-0 left-[-50px] right-[-50px] bottom-0 bg-cover bg-center pointer-events-none will-change-transform"
         style={{
@@ -98,12 +136,8 @@ export const MainScreen: React.FC = () => {
       />
 
       <div
-        className="relative z-10 w-full px-5 pt-3 pb-3 flex flex-col items-center flex-shrink-0 transition-all duration-350 ease-out"
-        style={{
-          opacity: isExpanded ? 0.2 : 1,
-          transform: isExpanded ? 'scale(0.95) translateY(-10px)' : 'scale(1) translateY(0)',
-          filter: isExpanded ? 'blur(2px)' : 'none',
-        }}
+        ref={topContentRef}
+        className="relative z-10 w-full px-5 pt-3 pb-3 flex flex-col items-center flex-shrink-0 origin-top will-change-transform"
       >
         <div className="w-full flex justify-end mb-2.5">
           <JellyButton
@@ -172,11 +206,11 @@ export const MainScreen: React.FC = () => {
       </div>
 
       <div
-        className="absolute inset-x-0 bottom-0 z-20 bg-white rounded-t-[36px] flex flex-col items-center shadow-[-0px_-10px_35px_rgba(0,0,0,0.15)] will-change-transform"
+        ref={sheetRef}
+        className="absolute inset-x-0 z-20 bg-white rounded-t-[36px] flex flex-col items-center shadow-[-0px_-10px_35px_rgba(0,0,0,0.15)] will-change-transform"
         style={{
-          top: `${sheetTop}px`,
-          transform: `translateY(${targetTranslateY}px)`,
-          transition: isDragging ? 'none' : 'top 400ms cubic-bezier(0.16, 1, 0.3, 1), transform 400ms cubic-bezier(0.16, 1, 0.3, 1)',
+          top: `${MIN_Y}px`,
+          height: `calc(100dvh - ${MIN_Y}px)`,
         }}
       >
         <div
@@ -184,10 +218,10 @@ export const MainScreen: React.FC = () => {
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
-          className="w-full pt-2.5 pb-2 flex flex-col items-center cursor-grab active:cursor-grabbing touch-none select-none flex-shrink-0"
+          className="w-full pt-3 pb-3 flex flex-col items-center cursor-grab active:cursor-grabbing touch-none select-none flex-shrink-0"
         >
-          <div className="w-9 h-1.5 rounded-full bg-black/15" />
-          <p className="text-[#8E8E93] text-[13px] font-medium tracking-tight mt-2.5 text-center pointer-events-none">
+          <div className="w-9 h-1.5 rounded-full bg-black/15 pointer-events-none" />
+          <p className="text-[#8E8E93] text-[13px] font-medium tracking-tight mt-3 text-center pointer-events-none">
             История переводов
           </p>
         </div>
