@@ -60,11 +60,10 @@ export const MainScreen: React.FC = () => {
   const startDragY = useRef(0);
   const rafId = useRef<number>();
 
-  const flipTimeoutRef = useRef<NodeJS.Timeout>();
+  const flipTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const [isFlipped, setIsFlipped] = useState(false);
   const [timeLeft, setTimeLeft] = useState({ d: '0', h: '0', m: '0' });
 
-  // Таймер обратного отсчета
   useEffect(() => {
     const target = new Date();
     target.setDate(target.getDate() + 7);
@@ -88,7 +87,7 @@ export const MainScreen: React.FC = () => {
     flipTimeoutRef.current = setTimeout(() => {
       setIsFlipped((prev) => !prev);
       if (typeof navigator !== 'undefined' && navigator.vibrate) {
-        navigator.vibrate(50); // Тактильный отклик iOS
+        navigator.vibrate(50);
       }
     }, 550);
   };
@@ -97,7 +96,6 @@ export const MainScreen: React.FC = () => {
     if (flipTimeoutRef.current) clearTimeout(flipTimeoutRef.current);
   };
 
-  // Механика модального окна
   const updateDOM = (y: number) => {
     if (!sheetRef.current || !topContentRef.current) return;
     const clampedY = Math.max(MIN_Y, Math.min(MAX_Y, y));
@@ -236,7 +234,7 @@ export const MainScreen: React.FC = () => {
             </div>
 
             <div className="absolute inset-0 backface-hidden rotate-y-180 bg-[#E33125] rounded-[24px] p-5 flex flex-col items-center justify-center shadow-lg">
-              <span className="text-[#19181F] text-[14px] font-semibold opacity-75 mb-1.5">
+              <span className="text-[#19181F] text-[14px] font-semibold opacity-75 mb-1.5 text-center">
                 До еженедельного пополнения:
               </span>
               <div className="flex items-baseline text-[#19181F] text-[34px] font-bold tracking-tight gap-1.5 leading-none">
