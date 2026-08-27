@@ -90,6 +90,7 @@ export const App: React.FC = () => {
         }}
       >
         <TransferScreen
+          isActive={currentScreen === 'transfer'}
           onBack={handleBackFromTransfer}
           activeStyle={activeStyle}
           balance={balance}
