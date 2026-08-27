@@ -4,6 +4,7 @@ import { JellyButton } from '@/uis/JellyButton';
 import { CardStyle, generateTransferLink } from '@/mechanics/bankStore';
 
 interface TransferScreenProps {
+  isActive: boolean;
   onBack: () => void;
   activeStyle: CardStyle;
   balance: number;
@@ -11,6 +12,7 @@ interface TransferScreenProps {
 }
 
 export const TransferScreen: React.FC<TransferScreenProps> = ({
+  isActive,
   onBack,
   activeStyle,
   balance,
@@ -21,11 +23,19 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      inputRef.current?.focus();
-    }, 300);
-    return () => clearTimeout(timer);
-  }, []);
+    if (isActive) {
+      // Фокусируемся только когда окно полностью выехало (450ms анимации + 50ms запас)
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 500);
+      return () => clearTimeout(timer);
+    } else {
+      // Убираем клавиатуру и очищаем поле, когда окно закрывается
+      inputRef.current?.blur();
+      const clearTimer = setTimeout(() => setAmount(''), 450);
+      return () => clearTimeout(clearTimer);
+    }
+  }, [isActive]);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const onlyDigits = e.target.value.replace(/\D/g, '');
