@@ -11,6 +11,12 @@ interface TransferScreenProps {
   currentBgImage: string;
 }
 
+const BARCODE_PATTERN = [
+  2, 1, 1, 3, 1, 2, 4, 1, 1, 2, 3, 1, 1, 4, 2, 1, 2, 3, 1, 1,
+  3, 2, 1, 1, 4, 1, 2, 1, 3, 1, 1, 2, 4, 1, 2, 1, 1, 3, 2, 1,
+  1, 4, 1, 2, 3, 1, 2, 1, 1, 4, 2, 1, 3, 1, 1, 2, 1, 4, 2, 1
+];
+
 export const TransferScreen: React.FC<TransferScreenProps> = ({
   isActive,
   onBack,
@@ -22,6 +28,7 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
   const [amount, setAmount] = useState('');
   const [recipient, setRecipient] = useState('');
   const [errorText, setErrorText] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [receiptMeta, setReceiptMeta] = useState({ number: '000000', date: '', time: '' });
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -41,16 +48,21 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
         time: `${hours}:${minutes}`,
       });
 
-      const timer = setTimeout(() => {
-        inputRef.current?.focus();
-      }, 450);
-      return () => clearTimeout(timer);
+      const focusTimer = setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+          inputRef.current.click();
+        }
+      }, 100);
+
+      return () => clearTimeout(focusTimer);
     } else {
       inputRef.current?.blur();
       const clearTimer = setTimeout(() => {
         setAmount('');
         setRecipient('');
         setErrorText(null);
+        setSuccessMessage(null);
       }, 400);
       return () => clearTimeout(clearTimer);
     }
@@ -89,10 +101,10 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
       return;
     }
 
-    onBack();
+    setSuccessMessage(`Поздравляем! Перевод на ${num}₽ успешно выполнен!`);
     setTimeout(() => {
-      alert(`Перевод на сумму ${num} ₽ выполнен!`);
-    }, 250);
+      onBack();
+    }, 1600);
   };
 
   const isAmountValid = () => {
@@ -110,8 +122,8 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
         }}
       />
 
-      <div className="relative z-10 w-full px-5 pt-3 pb-6 flex flex-col items-center justify-between flex-1 overflow-y-auto scroll-y-touch">
-        <div className="w-full flex justify-between items-center mb-3">
+      <div className="relative z-10 w-full px-5 pt-3 pb-8 flex flex-col items-center justify-between flex-1 overflow-y-auto scroll-y-touch">
+        <div className="w-full flex justify-between items-center mb-1 flex-shrink-0">
           <JellyButton
             type="button"
             onClick={onBack}
@@ -126,11 +138,15 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
           </JellyButton>
         </div>
 
-        <div className="w-full max-w-[340px] my-auto flex flex-col items-center">
-          <div className="relative w-full bg-[#FFFFFF] rounded-t-[22px] shadow-2xl p-5 text-black flex flex-col">
-            <div className="flex flex-col items-center border-b border-dashed border-black/20 pb-3.5 mb-3.5">
-              <div className="w-9 h-9 rounded-full bg-[#E33125] flex items-center justify-center mb-1.5 shadow-sm">
-                <span className="text-white font-bold text-[17px] tracking-tighter">Ü</span>
+        <div className="w-full max-w-[340px] flex flex-col items-center my-auto -translate-y-4">
+          <div className="relative w-full bg-[#FFFFFF] rounded-t-[24px] shadow-2xl p-5 text-black flex flex-col">
+            <div className="flex flex-col items-center border-b border-dashed border-black/20 pb-3 mb-3">
+              <div className="w-10 h-10 rounded-full bg-[#E33125] flex items-center justify-center mb-1.5 shadow-sm p-2">
+                <img
+                  src="/logo.png"
+                  alt="Bank Logo"
+                  className="w-full h-full object-contain brightness-0 invert pointer-events-none"
+                />
               </div>
               <span className="text-[17px] font-bold tracking-tight uppercase">KUMPEL BANK</span>
               <span className="text-[11px] font-semibold tracking-widest text-[#8E8E93] uppercase">
@@ -145,42 +161,43 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
 
             <div className="flex flex-col gap-3 py-1">
               <div className="flex items-center justify-between gap-2">
-                <div className="flex flex-col">
+                <div className="flex flex-col flex-1">
                   <span className="text-[13px] font-semibold text-black tracking-tight leading-tight">
                     Сумма перевода
                   </span>
-                  <span className="text-[10px] text-[#8E8E93] font-medium leading-tight">
-                    от 10 до 9999 ₽ (макс. {balance} ₽)
+                  <span className="text-[10px] text-[#8E8E93] font-medium leading-tight mt-0.5">
+                    от 10 до 9999₽ за один раз
                   </span>
                 </div>
-                <div className="flex items-center justify-end bg-black/[0.04] px-2.5 py-1.5 rounded-[12px] border border-black/[0.06] w-[130px]">
+                <div className="flex items-center justify-end h-10 px-3 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md w-[135px] shadow-inner">
                   <input
                     ref={inputRef}
+                    autoFocus
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
                     value={amount}
                     onChange={handleAmountChange}
                     placeholder="0"
-                    className="w-full bg-transparent text-right font-bold text-[18px] text-black outline-none placeholder:text-black/30 caret-[#E33125]"
+                    className="w-full bg-transparent text-right font-bold text-[17px] text-black outline-none placeholder:text-black/30 caret-[#E33125]"
                   />
-                  <span className="text-[16px] font-bold text-black ml-1 select-none pointer-events-none">
+                  <span className="text-[15px] font-bold text-black ml-1 select-none pointer-events-none">
                     ₽
                   </span>
                 </div>
               </div>
 
               <div className="flex items-center justify-between gap-2">
-                <div className="flex flex-col">
+                <div className="flex flex-col flex-1">
                   <span className="text-[13px] font-semibold text-black tracking-tight leading-tight">
                     Получатель
                   </span>
-                  <span className="text-[10px] text-[#8E8E93] font-medium leading-tight">
-                    Telegram тег
+                  <span className="text-[10px] text-[#8E8E93] font-medium leading-tight mt-0.5">
+                    имя получателя
                   </span>
                 </div>
-                <div className="flex items-center justify-end bg-black/[0.04] px-2.5 py-1.5 rounded-[12px] border border-black/[0.06] w-[130px]">
-                  <span className="text-[14px] font-semibold text-[#8E8E93] mr-0.5 select-none pointer-events-none">
+                <div className="flex items-center justify-end h-10 px-3 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md w-[135px] shadow-inner">
+                  <span className="text-[13px] font-semibold text-black/40 mr-0.5 select-none pointer-events-none">
                     @
                   </span>
                   <input
@@ -188,47 +205,34 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
                     value={recipient}
                     onChange={handleRecipientChange}
                     placeholder="username"
-                    className="w-full bg-transparent text-left font-semibold text-[14px] text-black outline-none placeholder:text-black/30 caret-[#E33125]"
+                    className="w-full bg-transparent text-left font-semibold text-[13px] text-black outline-none placeholder:text-black/30 caret-[#E33125]"
                   />
                 </div>
               </div>
             </div>
 
             {errorText && (
-              <p className="text-[#E33125] text-[11px] font-semibold text-center mt-2.5">
+              <p className="text-[#E33125] text-[11px] font-semibold text-center mt-2">
                 {errorText}
               </p>
             )}
 
-            <div className="border-t border-dashed border-black/20 mt-4 pt-3.5 flex flex-col items-center">
+            <div className="border-t border-dashed border-black/20 mt-3 pt-3 flex flex-col items-center">
               <div className="w-full flex items-center justify-between text-[11px] text-[#8E8E93] font-medium mb-2.5">
                 <span>Комиссия за перевод</span>
                 <span className="font-semibold text-black">0 ₽ (0%)</span>
               </div>
 
-              <div className="w-full h-8 flex justify-between items-center px-1 opacity-75">
-                <div className="w-[2px] h-full bg-black" />
-                <div className="w-[1px] h-full bg-black" />
-                <div className="w-[4px] h-full bg-black" />
-                <div className="w-[2px] h-full bg-black" />
-                <div className="w-[1px] h-full bg-black" />
-                <div className="w-[3px] h-full bg-black" />
-                <div className="w-[5px] h-full bg-black" />
-                <div className="w-[1px] h-full bg-black" />
-                <div className="w-[2px] h-full bg-black" />
-                <div className="w-[4px] h-full bg-black" />
-                <div className="w-[1px] h-full bg-black" />
-                <div className="w-[3px] h-full bg-black" />
-                <div className="w-[2px] h-full bg-black" />
-                <div className="w-[4px] h-full bg-black" />
-                <div className="w-[1px] h-full bg-black" />
-                <div className="w-[2px] h-full bg-black" />
-                <div className="w-[3px] h-full bg-black" />
-                <div className="w-[1px] h-full bg-black" />
-                <div className="w-[4px] h-full bg-black" />
-                <div className="w-[2px] h-full bg-black" />
+              <div className="w-full h-9 flex justify-center items-stretch gap-[1.5px] px-2 py-0.5 overflow-hidden">
+                {BARCODE_PATTERN.map((w, index) => (
+                  <div
+                    key={index}
+                    className="bg-black flex-shrink-0"
+                    style={{ width: `${w}px` }}
+                  />
+                ))}
               </div>
-              <span className="text-[9px] font-mono tracking-widest text-[#8E8E93] mt-1">
+              <span className="text-[10px] font-mono tracking-widest text-[#8E8E93] mt-1">
                 KMPL-{receiptMeta.number}-TX
               </span>
             </div>
@@ -243,16 +247,23 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
           />
         </div>
 
-        <div className="w-full max-w-[340px] mt-4">
+        <div className="w-full max-w-[340px] flex flex-col items-center flex-shrink-0">
+          {successMessage && (
+            <div className="w-full mb-3 px-4 py-3 rounded-2xl bg-black/40 border border-white/20 backdrop-blur-md text-white text-[13px] font-semibold text-center leading-tight shadow-lg transition-all animate-fade-in">
+              {successMessage}
+            </div>
+          )}
+
           <JellyButton
             type="button"
             onClick={handleIssueCheck}
+            disabled={Boolean(successMessage)}
             flashColor="bg-black/10"
             className="w-full h-12 rounded-full flex items-center justify-center font-semibold text-[16px] shadow-sm transition-all duration-300"
             style={{
               backgroundColor: activeStyle.accentColor,
               color: activeStyle.id === 'vanilla' ? '#19181F' : '#FFFFFF',
-              opacity: isAmountValid() ? 1 : 0.6,
+              opacity: isAmountValid() && !successMessage ? 1 : 0.6,
             }}
           >
             Выписать чек
