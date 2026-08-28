@@ -12,6 +12,14 @@ interface TransferScreenProps {
   currentBgImage: string;
 }
 
+const hexToRgba = (hex: string, alpha: number) => {
+  const clean = hex.replace('#', '');
+  const r = parseInt(clean.substring(0, 2), 16);
+  const g = parseInt(clean.substring(2, 4), 16);
+  const b = parseInt(clean.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
 const BarcodePattern: React.FC = () => {
   const bars = [
     2, 1, 3, 1, 1, 2, 4, 1, 2, 1, 3, 2, 1, 1, 4, 2, 1, 3, 1, 2,
@@ -288,19 +296,17 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
           <JellyButton
             type="button"
             onClick={handleIssueCheck}
-            flashColor={isAmountValid() ? 'bg-black/10' : 'bg-white/10'}
-            className={`w-full h-12 rounded-full flex items-center justify-center font-semibold text-[16px] backdrop-blur-md border transition-all duration-300 ${
-              isAmountValid()
-                ? 'border-white/20 shadow-md'
-                : 'bg-black/15 border-white/[0.16] text-white/50 shadow-none'
-            }`}
+            flashColor="bg-white/20"
+            className="w-full h-12 rounded-full flex items-center justify-center font-semibold text-[16px] backdrop-blur-md border border-white/30 shadow-[0_8px_30px_rgba(0,0,0,0.12)] transition-all duration-300"
             style={{
-              backgroundColor: isAmountValid() ? activeStyle.accentColor : undefined,
+              backgroundColor: isAmountValid()
+                ? hexToRgba(activeStyle.accentColor, 0.78)
+                : 'rgba(0, 0, 0, 0.12)',
               color: isAmountValid()
                 ? activeStyle.id === 'vanilla'
                   ? '#19181F'
                   : '#FFFFFF'
-                : undefined,
+                : 'rgba(255, 255, 255, 0.45)',
             }}
           >
             Выписать чек
