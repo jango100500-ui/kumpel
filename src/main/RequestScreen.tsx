@@ -7,7 +7,6 @@ interface RequestScreenProps {
   isActive: boolean;
   onBack: () => void;
   activeStyle: CardStyle;
-  balance: number;
   currentBgImage: string;
 }
 
@@ -70,7 +69,6 @@ export const RequestScreen: React.FC<RequestScreenProps> = ({
   isActive,
   onBack,
   activeStyle,
-  balance,
   currentBgImage,
 }) => {
   const tilt = useOrientation(22);
