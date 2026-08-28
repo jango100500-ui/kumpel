@@ -14,6 +14,7 @@ export const App: React.FC = () => {
   const [savedStyleId, setSavedStyleId] = useState('classic');
   const [savedBgId, setSavedBgId] = useState('classic');
   const [balance, setBalance] = useState(getStoredBalance());
+  const [successToast, setSuccessToast] = useState<string | null>(null);
 
   const activeStyle = cardStyles.find((s) => s.id === savedStyleId) || cardStyles[0];
   const activeBg = backgroundOptions.find((b) => b.id === savedBgId) || backgroundOptions[0];
@@ -31,9 +32,7 @@ export const App: React.FC = () => {
     if (claimResult) {
       if (claimResult.success && claimResult.amount) {
         setBalance(getStoredBalance());
-        alert(`🎉 Вам начислен перевод на сумму ${claimResult.amount}₽!`);
-      } else if (!claimResult.success && claimResult.error) {
-        alert(claimResult.error);
+        setSuccessToast(`Поздравляем! Перевод на ${claimResult.amount}₽ успешно выполнен!`);
       }
     }
   }, []);
@@ -50,11 +49,48 @@ export const App: React.FC = () => {
     setCurrentScreen('main');
   };
 
+  const handleTransferSuccess = (transferredAmount: number) => {
+    setTimeout(() => {
+      setSuccessToast(`Поздравляем! Перевод на ${transferredAmount}₽ успешно выполнен!`);
+    }, 300);
+  };
+
+  useEffect(() => {
+    if (successToast) {
+      const timer = setTimeout(() => {
+        setSuccessToast(null);
+      }, 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [successToast]);
+
   return (
     <div
       className="relative w-full h-[100dvh] overflow-hidden select-none transition-colors duration-500"
       style={{ backgroundColor: activeBg.themeColor }}
     >
+      {successToast && (
+        <div className="absolute top-5 inset-x-0 z-50 flex justify-center px-4 pointer-events-none animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="w-full max-w-[340px] bg-white/90 border border-black/10 backdrop-blur-xl rounded-[20px] p-4 shadow-[0_10px_30px_rgba(0,0,0,0.18)] flex items-center gap-3 pointer-events-auto">
+            <div className="w-9 h-9 rounded-full bg-[#34C759] flex items-center justify-center flex-shrink-0 shadow-sm">
+              <svg
+                className="w-5 h-5 text-white stroke-[2.5]"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div className="flex flex-col flex-1">
+              <span className="text-black text-[14px] font-semibold tracking-tight leading-tight">
+                {successToast}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div
         className="absolute inset-0 w-full h-full will-change-transform"
         style={{
@@ -100,6 +136,7 @@ export const App: React.FC = () => {
         <TransferScreen
           isActive={currentScreen === 'transfer'}
           onBack={handleBackFromTransfer}
+          onSuccess={handleTransferSuccess}
           activeStyle={activeStyle}
           balance={balance}
           currentBgImage={activeBg.image}
