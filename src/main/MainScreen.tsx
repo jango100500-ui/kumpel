@@ -29,20 +29,13 @@ const AUTH_TRANSITION = 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)';
 
 interface MainScreenProps {
   onOpenTransfer: () => void;
+  onOpenRequest: () => void;
   savedStyleId: string;
   setSavedStyleId: (id: string) => void;
   savedBgId: string;
   setSavedBgId: (id: string) => void;
   balance: number;
 }
-
-const hexToRgba = (hex: string, alpha: number) => {
-  const clean = hex.replace('#', '');
-  const r = parseInt(clean.substring(0, 2), 16);
-  const g = parseInt(clean.substring(2, 4), 16);
-  const b = parseInt(clean.substring(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-};
 
 const AnimatedDigit: React.FC<{ value: string }> = ({ value }) => {
   const [current, setCurrent] = useState(value);
@@ -79,6 +72,7 @@ const EMVChip: React.FC = () => (
 
 export const MainScreen: React.FC<MainScreenProps> = ({
   onOpenTransfer,
+  onOpenRequest,
   savedStyleId,
   setSavedStyleId,
   savedBgId,
@@ -388,6 +382,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
 
           <JellyButton
             type="button"
+            onClick={onOpenRequest}
             flashColor="bg-white/15"
             className="flex-1 h-12 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center gap-2"
           >
@@ -550,10 +545,10 @@ export const MainScreen: React.FC<MainScreenProps> = ({
           <JellyButton
             type="button"
             onClick={handleSave}
-            flashColor="bg-white/20"
-            className="w-full h-12 rounded-full flex items-center justify-center font-semibold text-[16px] backdrop-blur-md border border-white/30 shadow-[0_8px_30px_rgba(0,0,0,0.12)] mt-5 mb-2 transition-all duration-300"
+            flashColor="bg-black/10"
+            className="w-full h-12 rounded-full flex items-center justify-center font-semibold text-[16px] shadow-sm mt-5 mb-2 transition-colors duration-300"
             style={{
-              backgroundColor: hexToRgba(activeStyle.accentColor, 0.78),
+              backgroundColor: activeStyle.accentColor,
               color: activeStyle.id === 'vanilla' ? '#19181F' : '#FFFFFF',
             }}
           >
