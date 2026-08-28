@@ -1,146 +1,270 @@
-import React, { useState, useEffect } from 'react';
-import { AuthScreen } from './AuthScreen';
-import { MainScreen } from './MainScreen';
-import { TransferScreen } from './TransferScreen';
-import {
-  cardStyles,
-  backgroundOptions,
-  getStoredBalance,
-  processClaimLink,
-} from '@/mechanics/bankStore';
+import React, { useState, useRef, useEffect } from 'react';
+import { useOrientation } from '@/mechanics/useOrientation';
+import { JellyButton } from '@/uis/JellyButton';
+import { CardStyle } from '@/mechanics/bankStore';
 
-export const App: React.FC = () => {
-  const [currentScreen, setCurrentScreen] = useState<'auth' | 'main' | 'transfer'>('auth');
-  const [savedStyleId, setSavedStyleId] = useState('classic');
-  const [savedBgId, setSavedBgId] = useState('classic');
-  const [balance, setBalance] = useState(getStoredBalance());
-  const [successToast, setSuccessToast] = useState<string | null>(null);
+interface TransferScreenProps {
+  isActive: boolean;
+  onBack: () => void;
+  onSuccess: (amount: number) => void;
+  activeStyle: CardStyle;
+  balance: number;
+  currentBgImage: string;
+}
 
-  const activeStyle = cardStyles.find((s) => s.id === savedStyleId) || cardStyles[0];
-  const activeBg = backgroundOptions.find((b) => b.id === savedBgId) || backgroundOptions[0];
-
-  useEffect(() => {
-    document.body.style.backgroundColor = activeBg.themeColor;
-    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-    if (metaThemeColor) {
-      metaThemeColor.setAttribute('content', activeBg.themeColor);
-    }
-  }, [activeBg.themeColor]);
-
-  useEffect(() => {
-    const claimResult = processClaimLink();
-    if (claimResult) {
-      if (claimResult.success && claimResult.amount) {
-        setBalance(getStoredBalance());
-        setSuccessToast(`Поздравляем! Перевод на ${claimResult.amount}₽ успешно выполнен!`);
-      }
-    }
-  }, []);
-
-  const handleSignIn = () => {
-    setCurrentScreen('main');
-  };
-
-  const handleOpenTransfer = () => {
-    setCurrentScreen('transfer');
-  };
-
-  const handleBackFromTransfer = () => {
-    setCurrentScreen('main');
-  };
-
-  const handleTransferSuccess = (transferredAmount: number) => {
-    setTimeout(() => {
-      setSuccessToast(`Поздравляем! Перевод на ${transferredAmount}₽ успешно выполнен!`);
-    }, 300);
-  };
-
-  useEffect(() => {
-    if (successToast) {
-      const timer = setTimeout(() => {
-        setSuccessToast(null);
-      }, 3500);
-      return () => clearTimeout(timer);
-    }
-  }, [successToast]);
+const BarcodePattern: React.FC = () => {
+  const bars = [
+    2, 1, 3, 1, 1, 2, 4, 1, 2, 1, 3, 2, 1, 1, 4, 2, 1, 3, 1, 2,
+    1, 4, 1, 2, 3, 1, 2, 1, 1, 3, 2, 4, 1, 1, 2, 3, 1, 2, 4, 1,
+    2, 1, 3, 1, 2, 4, 1, 1, 3, 2, 1, 2, 4, 1, 3, 1, 2, 1, 1, 2
+  ];
 
   return (
-    <div
-      className="relative w-full h-[100dvh] overflow-hidden select-none transition-colors duration-500"
-      style={{ backgroundColor: activeBg.themeColor }}
-    >
-      {successToast && (
-        <div className="absolute top-5 inset-x-0 z-50 flex justify-center px-4 pointer-events-none animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="w-full max-w-[340px] bg-white/90 border border-black/10 backdrop-blur-xl rounded-[20px] p-4 shadow-[0_10px_30px_rgba(0,0,0,0.18)] flex items-center gap-3 pointer-events-auto">
-            <div className="w-9 h-9 rounded-full bg-[#34C759] flex items-center justify-center flex-shrink-0 shadow-sm">
-              <svg
-                className="w-5 h-5 text-white stroke-[2.5]"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
+    <div className="w-full h-9 flex items-center justify-center gap-[2px] px-2 overflow-hidden">
+      {bars.map((width, idx) => (
+        <div
+          key={idx}
+          className="h-full bg-black flex-shrink-0"
+          style={{ width: `${width}px` }}
+        />
+      ))}
+    </div>
+  );
+};
+
+export const TransferScreen: React.FC<TransferScreenProps> = ({
+  isActive,
+  onBack,
+  onSuccess,
+  activeStyle,
+  balance,
+  currentBgImage,
+}) => {
+  const tilt = useOrientation(22);
+  const [amount, setAmount] = useState('');
+  const [recipient, setRecipient] = useState('');
+  const [errorText, setErrorText] = useState<string | null>(null);
+  const [receiptMeta, setReceiptMeta] = useState({ number: '000000', date: '', time: '' });
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isActive) {
+      const now = new Date();
+      const day = String(now.getDate()).padStart(2, '0');
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const year = now.getFullYear();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const randomNum = Math.floor(100000 + Math.random() * 900000).toString();
+
+      setReceiptMeta({
+        number: randomNum,
+        date: `${day}.${month}.${year}`,
+        time: `${hours}:${minutes}`,
+      });
+
+      const focusTimer = setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 460);
+
+      return () => clearTimeout(focusTimer);
+    } else {
+      inputRef.current?.blur();
+      const clearTimer = setTimeout(() => {
+        setAmount('');
+        setRecipient('');
+        setErrorText(null);
+      }, 400);
+      return () => clearTimeout(clearTimer);
+    }
+  }, [isActive]);
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setErrorText(null);
+    const raw = e.target.value.replace(/\D/g, '');
+    if (raw === '') {
+      setAmount('');
+      return;
+    }
+
+    let num = parseInt(raw, 10);
+    if (num > 9999) num = 9999;
+    if (num > balance) num = balance;
+
+    setAmount(num.toString());
+  };
+
+  const handleRecipientChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/[^a-zA-Z0-9_]/g, '');
+    setRecipient(val);
+  };
+
+  const handleIssueCheck = () => {
+    const num = parseInt(amount, 10);
+
+    if (!num || isNaN(num) || num < 10) {
+      setErrorText('Минимальная сумма — 10 ₽');
+      return;
+    }
+
+    if (num > balance) {
+      setErrorText('Недостаточно средств на балансе');
+      return;
+    }
+
+    onBack();
+    onSuccess(num);
+  };
+
+  const isAmountValid = () => {
+    const num = parseInt(amount, 10);
+    return !isNaN(num) && num >= 10 && num <= 9999 && num <= balance;
+  };
+
+  return (
+    <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col justify-between select-none">
+      <div
+        className="absolute top-0 left-[-50px] right-[-50px] bottom-0 bg-cover bg-center pointer-events-none will-change-transform transition-opacity duration-200"
+        style={{
+          backgroundImage: `url(${currentBgImage})`,
+          transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.12)`,
+        }}
+      />
+
+      <div className="relative z-10 w-full px-5 pt-3 pb-6 flex flex-col items-center justify-between flex-1 overflow-y-auto scroll-y-touch">
+        <div className="w-full flex justify-between items-center mb-1">
+          <JellyButton
+            type="button"
+            onClick={onBack}
+            flashColor="bg-white/15"
+            className="w-11 h-11 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center"
+          >
+            <img
+              src="/close.png"
+              alt="Close"
+              className="w-4 h-4 object-contain brightness-0 invert opacity-75 pointer-events-none"
+            />
+          </JellyButton>
+        </div>
+
+        <div className="w-full max-w-[340px] flex flex-col items-center mt-1 mb-auto">
+          <div className="relative w-full bg-[#FFFFFF] rounded-t-[24px] shadow-2xl p-5 text-black flex flex-col">
+            <div className="flex flex-col items-center border-b border-dashed border-black/20 pb-3 mb-3">
+              <div className="w-10 h-10 rounded-full bg-[#E33125] flex items-center justify-center mb-1.5 shadow-sm p-2">
+                <img
+                  src="/logo.png"
+                  alt="Logo"
+                  className="w-full h-full object-contain brightness-0 invert pointer-events-none"
+                />
+              </div>
+              <span className="text-[17px] font-bold tracking-tight uppercase">KUMPEL BANK</span>
+              <span className="text-[11px] font-semibold tracking-widest text-[#8E8E93] uppercase">
+                Электронный чек №{receiptMeta.number}
+              </span>
+              <div className="flex gap-3 text-[11px] text-[#8E8E93] mt-1 font-medium">
+                <span>{receiptMeta.date}</span>
+                <span>•</span>
+                <span>{receiptMeta.time}</span>
+              </div>
             </div>
-            <div className="flex flex-col flex-1">
-              <span className="text-black text-[14px] font-semibold tracking-tight leading-tight">
-                {successToast}
+
+            <div className="flex flex-col gap-3 py-1">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-col">
+                  <span className="text-[13px] font-semibold text-black tracking-tight leading-tight">
+                    Сумма перевода
+                  </span>
+                  <span className="text-[10px] text-[#8E8E93] font-medium leading-tight">
+                    от 10 до 9999₽ за один раз
+                  </span>
+                </div>
+                <div className="flex items-center justify-end bg-black/[0.08] border border-black/[0.12] backdrop-blur-md px-3 py-1.5 rounded-full w-[130px] shadow-inner">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={amount}
+                    onChange={handleAmountChange}
+                    placeholder="0"
+                    className="w-full bg-transparent text-right font-bold text-[17px] text-black outline-none placeholder:text-black/30 caret-[#E33125]"
+                  />
+                  <span className="text-[15px] font-bold text-black ml-1 select-none pointer-events-none">
+                    ₽
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-col">
+                  <span className="text-[13px] font-semibold text-black tracking-tight leading-tight">
+                    Получатель
+                  </span>
+                  <span className="text-[10px] text-[#8E8E93] font-medium leading-tight">
+                    имя получателя
+                  </span>
+                </div>
+                <div className="flex items-center justify-end bg-black/[0.08] border border-black/[0.12] backdrop-blur-md px-3 py-1.5 rounded-full w-[130px] shadow-inner">
+                  <span className="text-[13px] font-semibold text-[#8E8E93] mr-0.5 select-none pointer-events-none">
+                    @
+                  </span>
+                  <input
+                    type="text"
+                    value={recipient}
+                    onChange={handleRecipientChange}
+                    placeholder="username"
+                    className="w-full bg-transparent text-left font-semibold text-[13px] text-black outline-none placeholder:text-black/30 caret-[#E33125]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {errorText && (
+              <p className="text-[#E33125] text-[11px] font-semibold text-center mt-2">
+                {errorText}
+              </p>
+            )}
+
+            <div className="border-t border-dashed border-black/20 mt-3 pt-3 flex flex-col items-center">
+              <div className="w-full flex items-center justify-between text-[11px] text-[#8E8E93] font-medium mb-2">
+                <span>Комиссия за перевод</span>
+                <span className="font-semibold text-black">0 ₽ (0%)</span>
+              </div>
+
+              <BarcodePattern />
+
+              <span className="text-[9px] font-mono tracking-widest text-[#8E8E93] mt-1">
+                KMPL-{receiptMeta.number}-TX
               </span>
             </div>
           </div>
+
+          <div
+            className="w-full h-3.5 bg-[#FFFFFF] shadow-2xl relative"
+            style={{
+              clipPath:
+                'polygon(0% 0%, 4% 100%, 8% 0%, 12% 100%, 16% 0%, 20% 100%, 24% 0%, 28% 100%, 32% 0%, 36% 100%, 40% 0%, 44% 100%, 48% 0%, 52% 100%, 56% 0%, 60% 100%, 64% 0%, 68% 100%, 72% 0%, 76% 100%, 80% 0%, 84% 100%, 88% 0%, 92% 100%, 96% 0%, 100% 100%, 100% 0%)',
+            }}
+          />
         </div>
-      )}
 
-      <div
-        className="absolute inset-0 w-full h-full will-change-transform"
-        style={{
-          transform: currentScreen === 'auth' ? 'translateX(0%)' : 'translateX(-30%)',
-          transition: 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)',
-          pointerEvents: currentScreen === 'auth' ? 'auto' : 'none',
-        }}
-      >
-        <AuthScreen onSignIn={handleSignIn} />
-      </div>
-
-      <div
-        className="absolute inset-0 w-full h-full will-change-transform shadow-[-16px_0_35px_rgba(0,0,0,0.25)]"
-        style={{
-          transform:
-            currentScreen === 'auth'
-              ? 'translateX(100%)'
-              : currentScreen === 'main'
-              ? 'translateX(0%)'
-              : 'translateX(-30%)',
-          transition: 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)',
-          pointerEvents: currentScreen === 'main' ? 'auto' : 'none',
-        }}
-      >
-        <MainScreen
-          onOpenTransfer={handleOpenTransfer}
-          savedStyleId={savedStyleId}
-          setSavedStyleId={setSavedStyleId}
-          savedBgId={savedBgId}
-          setSavedBgId={setSavedBgId}
-          balance={balance}
-        />
-      </div>
-
-      <div
-        className="absolute inset-0 w-full h-full will-change-transform shadow-[-16px_0_35px_rgba(0,0,0,0.25)]"
-        style={{
-          transform: currentScreen === 'transfer' ? 'translateX(0%)' : 'translateX(100%)',
-          transition: 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)',
-          pointerEvents: currentScreen === 'transfer' ? 'auto' : 'none',
-        }}
-      >
-        <TransferScreen
-          isActive={currentScreen === 'transfer'}
-          onBack={handleBackFromTransfer}
-          onSuccess={handleTransferSuccess}
-          activeStyle={activeStyle}
-          balance={balance}
-          currentBgImage={activeBg.image}
-        />
+        <div className="w-full max-w-[340px] mt-2">
+          <JellyButton
+            type="button"
+            onClick={handleIssueCheck}
+            flashColor="bg-black/10"
+            className="w-full h-12 rounded-full flex items-center justify-center font-semibold text-[16px] shadow-sm transition-all duration-300"
+            style={{
+              backgroundColor: activeStyle.accentColor,
+              color: activeStyle.id === 'vanilla' ? '#19181F' : '#FFFFFF',
+              opacity: isAmountValid() ? 1 : 0.6,
+            }}
+          >
+            Выписать чек
+          </JellyButton>
+        </div>
       </div>
     </div>
   );
