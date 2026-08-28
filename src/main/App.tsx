@@ -171,7 +171,6 @@ export const App: React.FC = () => {
           isActive={currentScreen === 'request'}
           onBack={handleBackToMain}
           activeStyle={activeStyle}
-          balance={balance}
           currentBgImage={activeBg.image}
         />
       </div>
