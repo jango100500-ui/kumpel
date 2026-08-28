@@ -5,18 +5,19 @@ import { JellyButton } from '@/uis/JellyButton';
 
 interface AuthScreenProps {
   onSignIn: () => void;
+  currentBgImage: string;
 }
 
-export const AuthScreen: React.FC<AuthScreenProps> = ({ onSignIn }) => {
+export const AuthScreen: React.FC<AuthScreenProps> = ({ onSignIn, currentBgImage }) => {
   const loc = useLocalization();
   const tilt = useOrientation(22);
 
   return (
     <div className="relative w-full h-full min-h-[100dvh] overflow-hidden flex flex-col justify-between select-none bg-transparent">
       <div
-        className="absolute inset-[-50px] bg-cover bg-center pointer-events-none will-change-transform"
+        className="absolute inset-[-50px] bg-cover bg-center pointer-events-none will-change-transform transition-opacity duration-300"
         style={{
-          backgroundImage: 'url(/background.png)',
+          backgroundImage: `url(${currentBgImage})`,
           transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.12)`,
         }}
       />
@@ -35,8 +36,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSignIn }) => {
           <JellyButton
             type="button"
             onClick={onSignIn}
-            flashColor="bg-black/10"
-            className="w-full h-12 bg-white text-black text-[16px] font-semibold rounded-full flex items-center justify-center shadow-none"
+            flashColor="bg-white/20"
+            className="w-full h-12 bg-white/25 border border-white/40 backdrop-blur-md text-white text-[16px] font-semibold rounded-full flex items-center justify-center shadow-[0_8px_30px_rgba(0,0,0,0.12)]"
           >
             {loc.signIn}
           </JellyButton>
