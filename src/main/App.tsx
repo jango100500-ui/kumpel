@@ -19,6 +19,14 @@ export const App: React.FC = () => {
   const activeBg = backgroundOptions.find((b) => b.id === savedBgId) || backgroundOptions[0];
 
   useEffect(() => {
+    document.body.style.backgroundColor = activeBg.themeColor;
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute('content', activeBg.themeColor);
+    }
+  }, [activeBg.themeColor]);
+
+  useEffect(() => {
     const claimResult = processClaimLink();
     if (claimResult) {
       if (claimResult.success && claimResult.amount) {
