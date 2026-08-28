@@ -116,6 +116,16 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   }, [activeBg.image, currentBgImage]);
 
   useEffect(() => {
+    if (isEditMode) {
+      document.body.style.backgroundColor = activeBg.themeColor;
+      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+      if (metaThemeColor) {
+        metaThemeColor.setAttribute('content', activeBg.themeColor);
+      }
+    }
+  }, [isEditMode, activeBg.themeColor]);
+
+  useEffect(() => {
     const target = new Date();
     target.setDate(target.getDate() + 7);
     const targetTime = target.getTime();
@@ -230,6 +240,12 @@ export const MainScreen: React.FC<MainScreenProps> = ({
       setIsFlipped(false);
     } else {
       setIsEditMode(false);
+      const originalBg = backgroundOptions.find((b) => b.id === savedBgId) || backgroundOptions[0];
+      document.body.style.backgroundColor = originalBg.themeColor;
+      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+      if (metaThemeColor) {
+        metaThemeColor.setAttribute('content', originalBg.themeColor);
+      }
     }
   };
 
@@ -248,7 +264,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   }, [isEditMode]);
 
   return (
-    <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col select-none">
+    <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col select-none bg-transparent">
       <div
         className="absolute top-0 left-[-50px] right-[-50px] bottom-0 bg-cover bg-center pointer-events-none will-change-transform transition-opacity duration-200 ease-in-out"
         style={{
