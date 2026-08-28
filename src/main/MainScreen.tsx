@@ -36,6 +36,14 @@ interface MainScreenProps {
   balance: number;
 }
 
+const hexToRgba = (hex: string, alpha: number) => {
+  const clean = hex.replace('#', '');
+  const r = parseInt(clean.substring(0, 2), 16);
+  const g = parseInt(clean.substring(2, 4), 16);
+  const b = parseInt(clean.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
 const AnimatedDigit: React.FC<{ value: string }> = ({ value }) => {
   const [current, setCurrent] = useState(value);
   const [prev, setPrev] = useState<string | null>(null);
@@ -542,10 +550,10 @@ export const MainScreen: React.FC<MainScreenProps> = ({
           <JellyButton
             type="button"
             onClick={handleSave}
-            flashColor="bg-black/10"
-            className="w-full h-12 rounded-full flex items-center justify-center font-semibold text-[16px] shadow-sm mt-5 mb-2 transition-colors duration-300"
+            flashColor="bg-white/20"
+            className="w-full h-12 rounded-full flex items-center justify-center font-semibold text-[16px] backdrop-blur-md border border-white/30 shadow-[0_8px_30px_rgba(0,0,0,0.12)] mt-5 mb-2 transition-all duration-300"
             style={{
-              backgroundColor: activeStyle.accentColor,
+              backgroundColor: hexToRgba(activeStyle.accentColor, 0.78),
               color: activeStyle.id === 'vanilla' ? '#19181F' : '#FFFFFF',
             }}
           >
