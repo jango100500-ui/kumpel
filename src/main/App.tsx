@@ -28,11 +28,55 @@ export const App: React.FC = () => {
   }, [activeBg.themeColor]);
 
   useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+    }
+  }, []);
+
+  const sendNotification = (message: string) => {
+    setSuccessToast(message);
+
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'granted') {
+        try {
+          new Notification('Kumpel Bank', {
+            body: message,
+            icon: '/logo.png',
+            badge: '/logo.png',
+          });
+        } catch {
+          if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+            navigator.serviceWorker.ready.then((reg) => {
+              reg.showNotification('Kumpel Bank', {
+                body: message,
+                icon: '/logo.png',
+                badge: '/logo.png',
+              });
+            });
+          }
+        }
+      } else if (Notification.permission === 'default') {
+        Notification.requestPermission().then((permission) => {
+          if (permission === 'granted') {
+            new Notification('Kumpel Bank', {
+              body: message,
+              icon: '/logo.png',
+              badge: '/logo.png',
+            });
+          }
+        });
+      }
+    }
+  };
+
+  useEffect(() => {
     const claimResult = processClaimLink();
     if (claimResult) {
       if (claimResult.success && claimResult.amount) {
         setBalance(getStoredBalance());
-        setSuccessToast(`Поздравляем! Перевод на ${claimResult.amount}₽ успешно выполнен!`);
+        sendNotification(`Поздравляем! Перевод на ${claimResult.amount}₽ успешно выполнен!`);
       }
     }
   }, []);
@@ -51,7 +95,7 @@ export const App: React.FC = () => {
 
   const handleTransferSuccess = (transferredAmount: number) => {
     setTimeout(() => {
-      setSuccessToast(`Поздравляем! Перевод на ${transferredAmount}₽ успешно выполнен!`);
+      sendNotification(`Поздравляем! Перевод на ${transferredAmount}₽ успешно выполнен!`);
     }, 300);
   };
 
