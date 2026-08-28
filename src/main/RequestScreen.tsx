@@ -54,11 +54,11 @@ const QRCodeSVG: React.FC = () => {
           )
         )}
       </svg>
-      <div className="absolute inset-0 m-auto w-10 h-10 bg-white rounded-xl shadow-md p-1.5 flex items-center justify-center border border-black/5">
+      <div className="absolute inset-0 m-auto w-10 h-10 bg-[#E33125] rounded-xl shadow-md p-2 flex items-center justify-center border border-black/10">
         <img
           src="/logo.png"
           alt="Kumpel"
-          className="w-full h-full object-contain brightness-0"
+          className="w-full h-full object-contain brightness-0 opacity-90 pointer-events-none"
         />
       </div>
     </div>
@@ -73,6 +73,7 @@ export const RequestScreen: React.FC<RequestScreenProps> = ({
 }) => {
   const tilt = useOrientation(22);
   const [isLoading, setIsLoading] = useState(true);
+  const [amount, setAmount] = useState('');
 
   useEffect(() => {
     if (isActive) {
@@ -83,11 +84,28 @@ export const RequestScreen: React.FC<RequestScreenProps> = ({
       return () => clearTimeout(timer);
     } else {
       setIsLoading(true);
+      setAmount('');
     }
   }, [isActive]);
 
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, '');
+    if (raw === '') {
+      setAmount('');
+      return;
+    }
+
+    let num = parseInt(raw, 10);
+    if (num > 9999) num = 9999;
+
+    setAmount(num.toString());
+  };
+
   const handleShareQR = async () => {
-    const text = 'Переведите мне средства в приложении Kumpel Bank!';
+    const text = amount
+      ? `Запрос на перевод ${amount} ₽ в приложении Kumpel Bank!`
+      : 'Переведите мне средства в приложении Kumpel Bank!';
+
     if (navigator.share) {
       try {
         await navigator.share({
@@ -98,7 +116,7 @@ export const RequestScreen: React.FC<RequestScreenProps> = ({
     } else {
       if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
         new Notification('Kumpel Bank', {
-          body: 'Данные для перевода скопированы!',
+          body: amount ? `Запрос на ${amount} ₽ скопирован!` : 'Данные для перевода скопированы!',
           icon: '/logo.png',
         });
       }
@@ -158,11 +176,32 @@ export const RequestScreen: React.FC<RequestScreenProps> = ({
                 <QRCodeSVG />
               </div>
 
-              <h3 className="text-black text-[16px] font-bold tracking-tight leading-snug mb-1.5">
-                Отсканируйте для перевода по QR-коду
-              </h3>
+              <div className="flex flex-col items-center justify-center gap-1.5 mb-2">
+                <span className="text-black text-[16px] font-bold tracking-tight leading-tight">
+                  Отсканируйте для перевода по QR-коду
+                </span>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-black text-[14px] font-semibold tracking-tight">
+                    на сумму
+                  </span>
+                  <div className="flex items-center bg-black/[0.08] border border-black/[0.12] backdrop-blur-md px-3 py-1 rounded-full shadow-inner w-[95px]">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={amount}
+                      onChange={handleAmountChange}
+                      placeholder="0"
+                      className="w-full bg-transparent text-right font-bold text-[15px] text-black outline-none placeholder:text-black/30 caret-[#E33125]"
+                    />
+                    <span className="text-[14px] font-bold text-black ml-1 select-none pointer-events-none">
+                      ₽
+                    </span>
+                  </div>
+                </div>
+              </div>
 
-              <p className="text-[#8E8E93] text-[12px] font-normal leading-relaxed px-2">
+              <p className="text-[#8E8E93] text-[12px] font-normal leading-relaxed px-2 mt-1">
                 Покажите этот код отправителю для мгновенного зачисления средств на ваш счет без комиссии.
               </p>
             </div>
