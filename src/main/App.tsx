@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AuthScreen } from './AuthScreen';
 import { MainScreen } from './MainScreen';
 import { TransferScreen } from './TransferScreen';
+import { RequestScreen } from './RequestScreen';
 import {
   cardStyles,
   backgroundOptions,
@@ -10,7 +11,7 @@ import {
 } from '@/mechanics/bankStore';
 
 export const App: React.FC = () => {
-  const [currentScreen, setCurrentScreen] = useState<'auth' | 'main' | 'transfer'>('auth');
+  const [currentScreen, setCurrentScreen] = useState<'auth' | 'main' | 'transfer' | 'request'>('auth');
   const [savedStyleId, setSavedStyleId] = useState('classic');
   const [savedBgId, setSavedBgId] = useState('classic');
   const [balance, setBalance] = useState(getStoredBalance());
@@ -20,7 +21,6 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     document.body.style.backgroundColor = activeBg.themeColor;
-    document.documentElement.style.backgroundColor = activeBg.themeColor;
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
       metaThemeColor.setAttribute('content', activeBg.themeColor);
@@ -28,22 +28,11 @@ export const App: React.FC = () => {
   }, [activeBg.themeColor]);
 
   useEffect(() => {
-    const askPermission = () => {
-      if (typeof window !== 'undefined' && 'Notification' in window) {
-        if (Notification.permission === 'default') {
-          Notification.requestPermission();
-        }
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'default') {
+        Notification.requestPermission();
       }
-    };
-
-    askPermission();
-    window.addEventListener('click', askPermission, { once: true });
-    window.addEventListener('touchstart', askPermission, { once: true });
-
-    return () => {
-      window.removeEventListener('click', askPermission);
-      window.removeEventListener('touchstart', askPermission);
-    };
+    }
   }, []);
 
   const sendNotification = (message: string) => {
@@ -98,14 +87,18 @@ export const App: React.FC = () => {
     setCurrentScreen('transfer');
   };
 
-  const handleBackFromTransfer = () => {
+  const handleOpenRequest = () => {
+    setCurrentScreen('request');
+  };
+
+  const handleBackToMain = () => {
     setCurrentScreen('main');
   };
 
   const handleTransferSuccess = (transferredAmount: number) => {
     setTimeout(() => {
       sendNotification(`Поздравляем! Перевод на ${transferredAmount}₽ успешно выполнен!`);
-    }, 250);
+    }, 300);
   };
 
   return (
@@ -121,7 +114,7 @@ export const App: React.FC = () => {
           pointerEvents: currentScreen === 'auth' ? 'auto' : 'none',
         }}
       >
-        <AuthScreen onSignIn={handleSignIn} currentBgImage={activeBg.image} />
+        <AuthScreen onSignIn={handleSignIn} />
       </div>
 
       <div
@@ -139,6 +132,7 @@ export const App: React.FC = () => {
       >
         <MainScreen
           onOpenTransfer={handleOpenTransfer}
+          onOpenRequest={handleOpenRequest}
           savedStyleId={savedStyleId}
           setSavedStyleId={setSavedStyleId}
           savedBgId={savedBgId}
@@ -157,8 +151,25 @@ export const App: React.FC = () => {
       >
         <TransferScreen
           isActive={currentScreen === 'transfer'}
-          onBack={handleBackFromTransfer}
+          onBack={handleBackToMain}
           onSuccess={handleTransferSuccess}
+          activeStyle={activeStyle}
+          balance={balance}
+          currentBgImage={activeBg.image}
+        />
+      </div>
+
+      <div
+        className="absolute inset-0 w-full h-full will-change-transform"
+        style={{
+          transform: currentScreen === 'request' ? 'translateX(0%)' : 'translateX(100%)',
+          transition: 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)',
+          pointerEvents: currentScreen === 'request' ? 'auto' : 'none',
+        }}
+      >
+        <RequestScreen
+          isActive={currentScreen === 'request'}
+          onBack={handleBackToMain}
           activeStyle={activeStyle}
           balance={balance}
           currentBgImage={activeBg.image}
