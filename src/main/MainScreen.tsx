@@ -464,13 +464,13 @@ export const MainScreen: React.FC<MainScreenProps> = ({
           <div className="w-9 h-1.5 rounded-full bg-black/15 dark:bg-white/20 pointer-events-none" />
         </div>
 
-        <div className="w-full max-w-[340px] px-2 pb-8 flex-1 overflow-y-auto scroll-y-touch flex flex-col justify-between">
-          <div className="flex flex-col">
+        <div className="w-full max-w-[340px] px-2 pb-10 flex-1 overflow-y-auto scroll-y-touch flex flex-col gap-4">
+          <div className="flex flex-col flex-shrink-0">
             <p className="text-[#8E8E93] text-[13px] font-medium tracking-tight px-1 mb-2">
               Цвет карты
             </p>
 
-            <div className="w-full flex justify-between px-1 mb-5">
+            <div className="w-full flex justify-between px-1 mb-4">
               {cardStyles.map((style) => {
                 const isSelected = tempStyleId === style.id;
                 return (
@@ -501,11 +501,11 @@ export const MainScreen: React.FC<MainScreenProps> = ({
               })}
             </div>
 
-            <p className="text-[#8E8E93] text-[13px] font-medium tracking-tight px-1 mb-2.5">
+            <p className="text-[#8E8E93] text-[13px] font-medium tracking-tight px-1 mb-2">
               Тема приложения
             </p>
 
-            <div className="w-full grid grid-cols-3 gap-2.5 px-1 mb-5">
+            <div className="w-full grid grid-cols-3 gap-2.5 px-1 mb-4">
               {(['light', 'dark', 'system'] as ThemeMode[]).map((t) => {
                 const isSelected = tempTheme === t;
                 const names: Record<ThemeMode, string> = { light: 'Светлая', dark: 'Темная', system: 'Как в системе' };
@@ -528,7 +528,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
               })}
             </div>
 
-            <p className="text-[#8E8E93] text-[13px] font-medium tracking-tight px-1 mb-2.5">
+            <p className="text-[#8E8E93] text-[13px] font-medium tracking-tight px-1 mb-2">
               Фон
             </p>
 
@@ -564,18 +564,20 @@ export const MainScreen: React.FC<MainScreenProps> = ({
             </div>
           </div>
 
-          <JellyButton
-            type="button"
-            onClick={handleSave}
-            flashColor="bg-black/10"
-            className="w-full h-12 rounded-full flex items-center justify-center font-semibold text-[16px] shadow-sm mt-5 mb-2 transition-colors duration-300"
-            style={{
-              backgroundColor: activeStyle.accentColor,
-              color: activeStyle.id === 'vanilla' ? '#19181F' : '#FFFFFF',
-            }}
-          >
-            Сохранить
-          </JellyButton>
+          <div className="w-full flex-shrink-0 pt-2 pb-2">
+            <JellyButton
+              type="button"
+              onClick={handleSave}
+              flashColor="bg-black/10"
+              className="w-full h-12 min-h-[48px] rounded-full flex items-center justify-center font-semibold text-[16px] shadow-sm transition-colors duration-300 flex-shrink-0"
+              style={{
+                backgroundColor: activeStyle.accentColor,
+                color: activeStyle.id === 'vanilla' ? '#19181F' : '#FFFFFF',
+              }}
+            >
+              Сохранить
+            </JellyButton>
+          </div>
         </div>
       </div>
     </div>
