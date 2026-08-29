@@ -8,7 +8,6 @@ import pytz
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pymongo import MongoClient
-from pymongo.server_api import ServerApi
 import certifi
 import telebot
 
@@ -33,11 +32,13 @@ if MONGO_URI:
     try:
         client = MongoClient(
             MONGO_URI,
-            server_api=ServerApi('1'),
+            tls=True,
             tlsCAFile=certifi.where(),
-            serverSelectionTimeoutMS=5000,
-            connectTimeoutMS=5000,
-            socketTimeoutMS=5000
+            authSource="admin",
+            serverSelectionTimeoutMS=8000,
+            connectTimeoutMS=8000,
+            socketTimeoutMS=8000,
+            retryWrites=True
         )
         db = client['kumpel_bank']
         users_coll = db['users']
@@ -45,7 +46,7 @@ if MONGO_URI:
         transactions_coll = db['transactions']
         market_coll = db['market']
         qr_coll = db['qr_codes']
-        print("Connected to MongoDB successfully with ServerApi('1')", flush=True)
+        print("Connected to MongoDB with authSource=admin", flush=True)
     except Exception as e:
         print(f"MongoDB init error: {e}", flush=True)
 
@@ -187,7 +188,7 @@ def process_weekly_payout(user):
 @app.route('/api/auth/verify', methods=['POST'])
 def verify_code():
     if auth_codes_coll is None or users_coll is None:
-        return jsonify({"success": False, "error": "База данных недоступна. Проверьте переменную MONGO_URI на Render."}), 500
+        return jsonify({"success": False, "error": "База данных недоступна. Проверьте статус кластера в Atlas."}), 500
     
     data = request.json or {}
     code = (data.get('code') or '').strip().upper()
