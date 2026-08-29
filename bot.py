@@ -18,14 +18,27 @@ app = Flask(__name__)
 CORS(app)
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN) if TELEGRAM_TOKEN else None
-client = MongoClient(MONGO_URI) if MONGO_URI else None
-db = client['kumpel_bank'] if client else None
 
-users_coll = db['users'] if db is not None else None
-auth_codes_coll = db['auth_codes'] if db is not None else None
-transactions_coll = db['transactions'] if db is not None else None
-market_coll = db['market'] if db is not None else None
-qr_coll = db['qr_codes'] if db is not None else None
+client = None
+db = None
+users_coll = None
+auth_codes_coll = None
+transactions_coll = None
+market_coll = None
+qr_coll = None
+
+if MONGO_URI:
+    try:
+        client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+        db = client['kumpel_bank']
+        users_coll = db['users']
+        auth_codes_coll = db['auth_codes']
+        transactions_coll = db['transactions']
+        market_coll = db['market']
+        qr_coll = db['qr_codes']
+        print("Connected to MongoDB successfully", flush=True)
+    except Exception as e:
+        print(f"MongoDB connection error: {e}", flush=True)
 
 MSK_TZ = pytz.timezone('Europe/Moscow')
 
@@ -35,9 +48,10 @@ def get_current_msk_time():
 if bot:
     try:
         bot.remove_webhook()
-        bot.set_webhook(url=f"{RENDER_URL}/api/telegram/webhook")
+        webhook_res = bot.set_webhook(url=f"{RENDER_URL}/api/telegram/webhook")
+        print(f"Webhook set result: {webhook_res}", flush=True)
     except Exception as e:
-        print(f"Webhook setup error: {e}")
+        print(f"Webhook setup error: {e}", flush=True)
 
     @bot.message_handler(commands=['start'])
     def send_auth_code(message):
@@ -48,80 +62,103 @@ if bot:
             code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
             
             if auth_codes_coll is not None:
-                auth_codes_coll.insert_one({
-                    "code": code,
-                    "tg_id": tg_id,
-                    "username": username,
-                    "first_name": first_name,
-                    "created_at": get_current_msk_time()
-                })
-            
+                try:
+                    auth_codes_coll.insert_one({
+                        "code": code,
+                        "tg_id": tg_id,
+                        "username": username,
+                        "first_name": first_name,
+                        "created_at": get_current_msk_time()
+                    })
+                except Exception as dbe:
+                    print(f"Database insert error: {dbe}", flush=True)
+
             text = (
                 f"Welcome to Kumpel, {first_name}!\n\n"
                 f"Here is your code to login via Kumpel — <tg-spoiler>{code}</tg-spoiler>\n\n"
                 f"Please save the code and don’t delete this chat. It can be requested in the future. Have good finances!"
             )
             bot.send_message(message.chat.id, text, parse_mode="HTML")
+            print(f"Code {code} sent to {tg_id}", flush=True)
         except Exception as e:
-            print(f"Error in send_auth_code: {e}")
+            print(f"Error in send_auth_code: {e}", flush=True)
+
+@app.route('/api/set_webhook', methods=['GET'])
+def trigger_set_webhook():
+    if not bot:
+        return jsonify({"error": "No bot instance"}), 500
+    try:
+        bot.remove_webhook()
+        res = bot.set_webhook(url=f"{RENDER_URL}/api/telegram/webhook")
+        return jsonify({"success": res, "url": f"{RENDER_URL}/api/telegram/webhook"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/telegram/webhook', methods=['POST'])
 def webhook():
     if bot:
         try:
             json_data = request.get_json(force=True)
+            print(f"Incoming update: {json_data}", flush=True)
             if json_data:
                 update = telebot.types.Update.de_json(json_data)
                 if update:
                     bot.process_new_updates([update])
         except Exception as e:
-            print(f"Webhook processing error: {e}")
+            print(f"Webhook processing error: {e}", flush=True)
     return 'OK', 200
 
 def get_or_create_market_rate():
     if market_coll is None:
         return 1.00
-    if market_coll.count_documents({}) == 0:
-        r = 1.00
-        for i in range(30, -1, -1):
-            d = (get_current_msk_time() - timedelta(days=i)).strftime('%Y-%m-%d')
-            r = round(max(0.60, min(1.80, r * (1 + random.uniform(-0.08, 0.10)))), 2)
-            market_coll.insert_one({"date": d, "rate": r})
+    try:
+        if market_coll.count_documents({}) == 0:
+            r = 1.00
+            for i in range(30, -1, -1):
+                d = (get_current_msk_time() - timedelta(days=i)).strftime('%Y-%m-%d')
+                r = round(max(0.60, min(1.80, r * (1 + random.uniform(-0.08, 0.10)))), 2)
+                market_coll.insert_one({"date": d, "rate": r})
 
-    today_str = get_current_msk_time().strftime('%Y-%m-%d')
-    today_record = market_coll.find_one({"date": today_str})
-    if not today_record:
-        yesterday_str = (get_current_msk_time() - timedelta(days=1)).strftime('%Y-%m-%d')
-        prev_record = market_coll.find_one({"date": yesterday_str})
-        base_rate = prev_record["rate"] if prev_record else 1.00
-        new_rate = round(max(0.60, min(1.80, base_rate * (1 + random.uniform(-0.08, 0.10)))), 2)
-        market_coll.insert_one({"date": today_str, "rate": new_rate})
-        return new_rate
-    return today_record["rate"]
+        today_str = get_current_msk_time().strftime('%Y-%m-%d')
+        today_record = market_coll.find_one({"date": today_str})
+        if not today_record:
+            yesterday_str = (get_current_msk_time() - timedelta(days=1)).strftime('%Y-%m-%d')
+            prev_record = market_coll.find_one({"date": yesterday_str})
+            base_rate = prev_record["rate"] if prev_record else 1.00
+            new_rate = round(max(0.60, min(1.80, base_rate * (1 + random.uniform(-0.08, 0.10)))), 2)
+            market_coll.insert_one({"date": today_str, "rate": new_rate})
+            return new_rate
+        return today_record["rate"]
+    except Exception as e:
+        print(f"Market rate error: {e}", flush=True)
+        return 1.00
 
 def process_weekly_payout(user):
     if users_coll is None:
         return user.get("balance", 300)
-    now = get_current_msk_time()
-    last_monday = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
-    last_payout = user.get("last_weekly_payout")
-    
-    if not last_payout or last_payout < last_monday:
-        new_bal = min(2000, user.get("balance", 0) + 150)
-        users_coll.update_one({"_id": user["_id"]}, {"$set": {"balance": new_bal, "last_weekly_payout": now}})
-        return new_bal
+    try:
+        now = get_current_msk_time()
+        last_monday = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+        last_payout = user.get("last_weekly_payout")
+        
+        if not last_payout or last_payout < last_monday:
+            new_bal = min(2000, user.get("balance", 0) + 150)
+            users_coll.update_one({"_id": user["_id"]}, {"$set": {"balance": new_bal, "last_weekly_payout": now}})
+            return new_bal
+    except Exception as e:
+        print(f"Weekly payout error: {e}", flush=True)
     return user.get("balance", 0)
 
 @app.route('/api/auth/verify', methods=['POST'])
 def verify_code():
     if auth_codes_coll is None or users_coll is None:
-        return jsonify({"success": False, "error": "База данных недоступна"}), 500
+        return jsonify({"success": False, "error": "База данных недоступна. Проверьте Network Access в MongoDB Atlas."}), 500
     
     data = request.json or {}
     code = (data.get('code') or '').strip().upper()
     record = auth_codes_coll.find_one({"code": code})
     if not record:
-        return jsonify({"success": False, "error": "Неверный код"}), 400
+        return jsonify({"success": False, "error": "Неверный или устаревший код"}), 400
         
     user = users_coll.find_one({"tg_id": record["tg_id"]})
     if not user:
@@ -157,7 +194,7 @@ def sync_user():
         
     user = users_coll.find_one({"tg_id": int(token)})
     if not user:
-        return jsonify({"error": "Not found"}), 404
+        return jsonify({"error": "User not found"}), 404
         
     balance = process_weekly_payout(user)
     current_rate = get_or_create_market_rate()
@@ -231,8 +268,8 @@ def transfer():
                 f"🎉 <b>Вам переведено {amount} ₭</b> от @{sender.get('username', 'пользователя')}!",
                 parse_mode="HTML"
             )
-        except Exception:
-            pass
+        except Exception as be:
+            print(f"Bot notify error: {be}", flush=True)
             
     return jsonify({"success": True})
 
@@ -305,8 +342,8 @@ def pay_qr():
                 f"🎉 <b>Счет на {amount} ₭ оплачен</b> пользователем @{sender.get('username', 'пользователем')}!",
                 parse_mode="HTML"
             )
-        except Exception:
-            pass
+        except Exception as be:
+            print(f"Bot notify error: {be}", flush=True)
             
     return jsonify({"success": True})
 
