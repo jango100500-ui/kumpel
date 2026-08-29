@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useOrientation } from '@/mechanics/useOrientation';
 import { JellyButton } from '@/uis/JellyButton';
 import { CardStyle } from '@/mechanics/bankStore';
 
@@ -9,7 +8,6 @@ interface TransferScreenProps {
   onSuccess: (amount: number) => void;
   activeStyle: CardStyle;
   balance: number;
-  currentBgImage: string;
 }
 
 const BarcodePattern: React.FC = () => {
@@ -38,9 +36,7 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
   onSuccess,
   activeStyle,
   balance,
-  currentBgImage,
 }) => {
-  const tilt = useOrientation(22);
   const [amount, setAmount] = useState('');
   const [recipient, setRecipient] = useState('');
   const [errorText, setErrorText] = useState<string | null>(null);
@@ -124,14 +120,7 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
   };
 
   return (
-    <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col justify-between select-none">
-      <div
-        className="absolute top-0 left-[-50px] right-[-50px] bottom-0 bg-cover bg-center pointer-events-none will-change-transform transition-opacity duration-200"
-        style={{
-          backgroundImage: `url(${currentBgImage})`,
-          transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.12)`,
-        }}
-      />
+    <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col justify-between select-none bg-transparent">
 
       <div className="relative z-10 w-full px-5 pt-3 pb-6 flex flex-col items-center justify-between flex-1 overflow-y-auto scroll-y-touch">
         <div className="w-full flex justify-between items-center mb-1">
