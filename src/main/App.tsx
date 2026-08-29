@@ -36,6 +36,11 @@ export const App: React.FC = () => {
     avatar: null,
   });
 
+  const [initialData, setInitialData] = useState<{ name: string; username: string }>({
+    name: '',
+    username: '',
+  });
+
   const [balance, setBalance] = useState(0);
   const [marketData, setMarketData] = useState<{
     rate: number;
@@ -154,15 +159,19 @@ export const App: React.FC = () => {
         localStorage.setItem('kumpel_token', res.token);
         setToken(res.token);
         if (res.is_new) {
+          setInitialData({
+            name: res.username || '',
+            username: res.username || '',
+          });
           setCurrentScreen('onboarding');
         } else {
           await loadData(res.token);
         }
       } else {
-        alert(res.error || 'Неверный код. Запросите новый код в боте.');
+        alert(res.error || 'Неверный код. Запросите код в боте.');
       }
     } catch {
-      alert('Сервер недоступен, попробуйте позже');
+      alert('База данных недоступна. Проверьте Network Access в MongoDB Atlas.');
     }
   };
 
@@ -283,7 +292,11 @@ export const App: React.FC = () => {
       </div>
 
       <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10" style={getScreenStyle('onboarding')}>
-        <OnboardingScreen onComplete={handleOnboardingComplete} />
+        <OnboardingScreen
+          initialName={initialData.name}
+          initialUsername={initialData.username}
+          onComplete={handleOnboardingComplete}
+        />
       </div>
 
       <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10" style={getScreenStyle('main')}>
