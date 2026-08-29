@@ -22,7 +22,7 @@ function spring(current: number, target: number, velocity: number, config: typeo
 export const TabBar: React.FC<TabBarProps> = ({ activeTab, onChange }) => {
   const sliderRef = useRef<HTMLDivElement>(null);
   const tabsRef = useRef<(HTMLButtonElement | null)[]>([]);
-  
+
   const state = useRef({
     x: 0, tx: 0, vx: 0,
     w: 0, tw: 0, vw: 0,
@@ -44,7 +44,7 @@ export const TabBar: React.FC<TabBarProps> = ({ activeTab, onChange }) => {
         if (dist > 15) {
           if (sliderRef.current) {
             sliderRef.current.style.backgroundColor = 'transparent';
-            sliderRef.current.style.borderColor = 'rgba(255,255,255,0.2)';
+            sliderRef.current.style.borderColor = 'rgba(255,255,255,0.3)';
           }
           s.tsy = 1 + 0.27 * s.intensity;
           s.tsx = 1 - 0.10 * s.intensity;
@@ -90,12 +90,11 @@ export const TabBar: React.FC<TabBarProps> = ({ activeTab, onChange }) => {
   useEffect(() => {
     const idx = activeTab === 'main' ? 0 : 1;
     const el = tabsRef.current[idx];
-    
+
     if (el) {
-      // Сужаем каплю внутри кнопки (минус 16px ширины, смещение +8px вправо)
-      state.current.tw = el.offsetWidth - 16;
-      state.current.tx = el.offsetLeft + 8;
-      
+      state.current.tx = el.offsetLeft;
+      state.current.tw = el.offsetWidth;
+
       if (state.current.w === 0) {
         state.current.x = state.current.tx;
         state.current.w = state.current.tw;
@@ -108,27 +107,29 @@ export const TabBar: React.FC<TabBarProps> = ({ activeTab, onChange }) => {
   }, [activeTab]);
 
   return (
-    <div className="w-[210px] mx-auto h-[64px] bg-black/10 border border-white/[0.16] backdrop-blur-md rounded-full p-1.5 flex shadow-[0_8px_32px_rgba(0,0,0,0.12)] relative">
+    <div className="w-[200px] mx-auto h-[62px] bg-black/35 dark:bg-black/50 border border-white/20 backdrop-blur-2xl rounded-full p-[6px] flex gap-[6px] shadow-[0_10px_35px_rgba(0,0,0,0.22)] relative">
       <div
         ref={sliderRef}
-        className="absolute top-1.5 bottom-1.5 left-0 rounded-full bg-white/20 border border-transparent z-0 pointer-events-none origin-center will-change-transform transition-colors duration-150"
+        className="absolute top-[6px] bottom-[6px] left-0 rounded-full bg-white/25 border border-white/30 dark:bg-white/20 dark:border-white/15 z-0 pointer-events-none origin-center will-change-transform transition-colors duration-150 shadow-sm"
       />
-      
+
       <button
         ref={(el) => (tabsRef.current[0] = el)}
         onClick={() => onChange('main')}
-        className="flex-1 flex flex-col items-center justify-center relative z-10 outline-none tap-highlight-transparent"
+        className="flex-1 flex flex-col items-center justify-center relative z-10 outline-none tap-highlight-transparent rounded-full"
       >
-        <img 
-          src={activeTab === 'main' ? '/walletf.png' : '/walletu.png'} 
-          alt="Wallet" 
+        <img
+          src={activeTab === 'main' ? '/walletf.png' : '/walletu.png'}
+          alt="Wallet"
           className={`w-[22px] h-[22px] object-contain transition-transform duration-200 mb-0.5 brightness-0 invert ${
-            activeTab === 'main' ? 'scale-110 opacity-100' : 'opacity-60'
+            activeTab === 'main' ? 'scale-110 opacity-100' : 'opacity-65'
           }`}
         />
-        <span className={`text-[10px] font-semibold transition-colors duration-200 ${
-          activeTab === 'main' ? 'text-white' : 'text-white/60'
-        }`}>
+        <span
+          className={`text-[10px] font-semibold transition-colors duration-200 ${
+            activeTab === 'main' ? 'text-white' : 'text-white/65'
+          }`}
+        >
           Кошелек
         </span>
       </button>
@@ -136,18 +137,20 @@ export const TabBar: React.FC<TabBarProps> = ({ activeTab, onChange }) => {
       <button
         ref={(el) => (tabsRef.current[1] = el)}
         onClick={() => onChange('exchange')}
-        className="flex-1 flex flex-col items-center justify-center relative z-10 outline-none tap-highlight-transparent"
+        className="flex-1 flex flex-col items-center justify-center relative z-10 outline-none tap-highlight-transparent rounded-full"
       >
-        <img 
-          src={activeTab === 'exchange' ? '/birgef.png' : '/birgeu.png'} 
-          alt="Exchange" 
+        <img
+          src={activeTab === 'exchange' ? '/birgef.png' : '/birgeu.png'}
+          alt="Exchange"
           className={`w-[22px] h-[22px] object-contain transition-transform duration-200 mb-0.5 brightness-0 invert ${
-            activeTab === 'exchange' ? 'scale-110 opacity-100' : 'opacity-60'
+            activeTab === 'exchange' ? 'scale-110 opacity-100' : 'opacity-65'
           }`}
         />
-        <span className={`text-[10px] font-semibold transition-colors duration-200 ${
-          activeTab === 'exchange' ? 'text-white' : 'text-white/60'
-        }`}>
+        <span
+          className={`text-[10px] font-semibold transition-colors duration-200 ${
+            activeTab === 'exchange' ? 'text-white' : 'text-white/65'
+          }`}
+        >
           Биржа
         </span>
       </button>
