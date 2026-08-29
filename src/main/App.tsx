@@ -75,14 +75,14 @@ export const App: React.FC = () => {
   const loadData = async (userToken: string) => {
     try {
       const res = await api.syncUser(userToken);
-      if (!res.error) {
+      if (res && !res.error && res.profile) {
         setProfile(res.profile);
-        setBalance(res.balance);
+        setBalance(res.balance || 0);
         setMarketData({
-          rate: res.rate,
-          history: res.market_history,
+          rate: res.rate || 1.0,
+          history: res.market_history || [],
         });
-        setTransactions(res.transactions);
+        setTransactions(res.transactions || []);
         setCurrentScreen('main');
       }
     } catch {}
@@ -108,7 +108,7 @@ export const App: React.FC = () => {
         } else {
           alert('QR-код уже использован или недействителен');
         }
-      });
+      }).catch(() => {});
     }
   }, [token]);
 
@@ -160,8 +160,8 @@ export const App: React.FC = () => {
         setToken(res.token);
         if (res.is_new) {
           setInitialData({
-            name: res.username || '',
-            username: res.username || '',
+            name: res.initial_name || '',
+            username: res.initial_username || '',
           });
           setCurrentScreen('onboarding');
         } else {
@@ -170,8 +170,8 @@ export const App: React.FC = () => {
       } else {
         alert(res.error || 'Неверный код. Запросите код в боте.');
       }
-    } catch {
-      alert('База данных недоступна. Проверьте Network Access в MongoDB Atlas.');
+    } catch (err: any) {
+      alert(err.message || 'Ошибка подключения к серверу');
     }
   };
 
