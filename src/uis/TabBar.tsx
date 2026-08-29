@@ -1,10 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { ThemeMode } from '@/mechanics/bankStore';
 
 interface TabBarProps {
   activeTab: 'main' | 'exchange';
   onChange: (tab: 'main' | 'exchange') => void;
-  savedTheme: ThemeMode;
 }
 
 const PHYSICS = {
@@ -21,7 +19,7 @@ function spring(current: number, target: number, velocity: number, config: typeo
   return [current, velocity];
 }
 
-export const TabBar: React.FC<TabBarProps> = ({ activeTab, onChange, savedTheme }) => {
+export const TabBar: React.FC<TabBarProps> = ({ activeTab, onChange }) => {
   const sliderRef = useRef<HTMLDivElement>(null);
   const tabsRef = useRef<(HTMLButtonElement | null)[]>([]);
   
@@ -46,7 +44,7 @@ export const TabBar: React.FC<TabBarProps> = ({ activeTab, onChange, savedTheme 
         if (dist > 15) {
           if (sliderRef.current) {
             sliderRef.current.style.backgroundColor = 'transparent';
-            sliderRef.current.style.borderColor = savedTheme === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)';
+            sliderRef.current.style.borderColor = 'rgba(255,255,255,0.2)';
           }
           s.tsy = 1 + 0.27 * s.intensity;
           s.tsx = 1 - 0.10 * s.intensity;
@@ -87,15 +85,16 @@ export const TabBar: React.FC<TabBarProps> = ({ activeTab, onChange, savedTheme 
     return () => {
       if (rafId.current) cancelAnimationFrame(rafId.current);
     };
-  }, [savedTheme]);
+  }, []);
 
   useEffect(() => {
     const idx = activeTab === 'main' ? 0 : 1;
     const el = tabsRef.current[idx];
     
     if (el) {
-      state.current.tx = el.offsetLeft;
-      state.current.tw = el.offsetWidth;
+      // Сужаем каплю внутри кнопки (минус 16px ширины, смещение +8px вправо)
+      state.current.tw = el.offsetWidth - 16;
+      state.current.tx = el.offsetLeft + 8;
       
       if (state.current.w === 0) {
         state.current.x = state.current.tx;
@@ -109,10 +108,10 @@ export const TabBar: React.FC<TabBarProps> = ({ activeTab, onChange, savedTheme 
   }, [activeTab]);
 
   return (
-    <div className="w-[260px] max-w-[90%] mx-auto h-[68px] bg-white/60 dark:bg-black/60 backdrop-blur-[30px] border border-white/40 dark:border-white/10 rounded-[34px] p-2 flex shadow-[0_8px_32px_rgba(0,0,0,0.12)] relative">
+    <div className="w-[210px] mx-auto h-[64px] bg-black/10 border border-white/[0.16] backdrop-blur-md rounded-full p-1.5 flex shadow-[0_8px_32px_rgba(0,0,0,0.12)] relative">
       <div
         ref={sliderRef}
-        className="absolute top-2 bottom-2 left-0 rounded-[26px] bg-black/10 dark:bg-white/15 border border-transparent z-0 pointer-events-none origin-center will-change-transform transition-colors duration-150"
+        className="absolute top-1.5 bottom-1.5 left-0 rounded-full bg-white/20 border border-transparent z-0 pointer-events-none origin-center will-change-transform transition-colors duration-150"
       />
       
       <button
@@ -123,12 +122,12 @@ export const TabBar: React.FC<TabBarProps> = ({ activeTab, onChange, savedTheme 
         <img 
           src={activeTab === 'main' ? '/walletf.png' : '/walletu.png'} 
           alt="Wallet" 
-          className={`w-[22px] h-[22px] object-contain transition-transform duration-200 mb-0.5 ${
-            activeTab === 'main' ? 'dark:invert scale-110' : 'dark:invert opacity-75'
+          className={`w-[22px] h-[22px] object-contain transition-transform duration-200 mb-0.5 brightness-0 invert ${
+            activeTab === 'main' ? 'scale-110 opacity-100' : 'opacity-60'
           }`}
         />
         <span className={`text-[10px] font-semibold transition-colors duration-200 ${
-          activeTab === 'main' ? 'text-black dark:text-white' : 'text-black/50 dark:text-white/50'
+          activeTab === 'main' ? 'text-white' : 'text-white/60'
         }`}>
           Кошелек
         </span>
@@ -142,12 +141,12 @@ export const TabBar: React.FC<TabBarProps> = ({ activeTab, onChange, savedTheme 
         <img 
           src={activeTab === 'exchange' ? '/birgef.png' : '/birgeu.png'} 
           alt="Exchange" 
-          className={`w-[22px] h-[22px] object-contain transition-transform duration-200 mb-0.5 ${
-            activeTab === 'exchange' ? 'dark:invert scale-110' : 'dark:invert opacity-75'
+          className={`w-[22px] h-[22px] object-contain transition-transform duration-200 mb-0.5 brightness-0 invert ${
+            activeTab === 'exchange' ? 'scale-110 opacity-100' : 'opacity-60'
           }`}
         />
         <span className={`text-[10px] font-semibold transition-colors duration-200 ${
-          activeTab === 'exchange' ? 'text-black dark:text-white' : 'text-black/50 dark:text-white/50'
+          activeTab === 'exchange' ? 'text-white' : 'text-white/60'
         }`}>
           Биржа
         </span>
