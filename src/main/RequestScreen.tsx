@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useOrientation } from '@/mechanics/useOrientation';
 import { JellyButton } from '@/uis/JellyButton';
 import { CardStyle } from '@/mechanics/bankStore';
+import { api } from '@/mechanics/api';
 
 interface RequestScreenProps {
   isActive: boolean;
   onBack: () => void;
   activeStyle: CardStyle;
   currentBgImage: string;
+  token: string | null;
 }
 
 const QRCodeSVG: React.FC = () => {
@@ -81,11 +83,13 @@ export const RequestScreen: React.FC<RequestScreenProps> = ({
   onBack,
   activeStyle,
   currentBgImage,
+  token,
 }) => {
   const tilt = useOrientation(22);
   const [isLoading, setIsLoading] = useState(true);
   const [amount, setAmount] = useState('');
   const [isCopied, setIsCopied] = useState(false);
+  const [qrToken, setQrToken] = useState<string | null>(null);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
@@ -98,6 +102,7 @@ export const RequestScreen: React.FC<RequestScreenProps> = ({
     } else {
       setIsLoading(true);
       setAmount('');
+      setQrToken(null);
       setIsCopied(false);
       if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
     }
@@ -107,6 +112,7 @@ export const RequestScreen: React.FC<RequestScreenProps> = ({
     const raw = e.target.value.replace(/\D/g, '');
     if (raw === '') {
       setAmount('');
+      setQrToken(null);
       return;
     }
 
@@ -114,19 +120,35 @@ export const RequestScreen: React.FC<RequestScreenProps> = ({
     if (num > 9999) num = 9999;
 
     setAmount(num.toString());
+    setQrToken(null);
+  };
+
+  const getOrCreateQRToken = async (): Promise<string | null> => {
+    if (qrToken) return qrToken;
+    if (!token) return null;
+
+    const num = parseInt(amount, 10) || 0;
+    try {
+      const res = await api.createQR({ token, amount: num });
+      if (res.success && res.qr_token) {
+        setQrToken(res.qr_token);
+        return res.qr_token;
+      }
+    } catch {}
+    return null;
   };
 
   const handleShareQR = async () => {
-    const num = parseInt(amount, 10);
-    const text = num && num > 0
-      ? `Переведите мне ${num} ₭ в приложении Kumpel Bank!`
-      : 'Переведите мне средства в приложении Kumpel Bank!';
+    const currentToken = await getOrCreateQRToken();
+    const link = currentToken
+      ? `https://kumpel-six.vercel.app/?pay=${currentToken}`
+      : 'https://kumpel-six.vercel.app/';
 
     if (navigator.share) {
       try {
         await navigator.share({
           title: 'Kumpel Bank QR',
-          text: text,
+          text: `Оплатите счет в приложении Kumpel Bank: ${link}`,
         });
       } catch {}
     } else {
@@ -135,13 +157,13 @@ export const RequestScreen: React.FC<RequestScreenProps> = ({
   };
 
   const handleCopy = async () => {
-    const num = parseInt(amount, 10);
-    const text = num && num > 0
-      ? `Переведите мне ${num} ₭ в приложении Kumpel Bank!`
-      : 'Переведите мне средства в приложении Kumpel Bank!';
+    const currentToken = await getOrCreateQRToken();
+    const link = currentToken
+      ? `https://kumpel-six.vercel.app/?pay=${currentToken}`
+      : 'https://kumpel-six.vercel.app/';
 
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(link);
     } catch {}
 
     if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
@@ -224,7 +246,7 @@ export const RequestScreen: React.FC<RequestScreenProps> = ({
                       Сумма
                     </span>
                     <span className="text-[10px] text-[#8E8E93] font-medium leading-tight">
-                      от 10 до 9999₭ за один раз
+                      от 10 до 9999 ₭ за один раз
                     </span>
                   </div>
                   <div className="flex items-center justify-end bg-black/[0.08] dark:bg-white/[0.12] border border-black/[0.12] dark:border-white/[0.12] backdrop-blur-md px-3 py-1.5 rounded-full w-[120px] shadow-inner">
