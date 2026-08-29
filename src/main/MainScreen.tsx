@@ -40,6 +40,11 @@ interface MainScreenProps {
   balance: number;
   isEditMode: boolean;
   setIsEditMode: (v: boolean) => void;
+  profile: {
+    name: string;
+    username: string;
+    avatar: string | null;
+  };
 }
 
 const AnimatedDigit: React.FC<{ value: string }> = ({ value }) => {
@@ -88,6 +93,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   balance,
   isEditMode,
   setIsEditMode,
+  profile,
 }) => {
   const tilt = useOrientation(22);
 
@@ -268,6 +274,8 @@ export const MainScreen: React.FC<MainScreenProps> = ({
     };
   }, [isEditMode]);
 
+  const displayName = profile.name.length > 7 ? profile.name.slice(0, 7) + '…' : profile.name;
+
   return (
     <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col select-none bg-transparent">
       <div
@@ -283,7 +291,32 @@ export const MainScreen: React.FC<MainScreenProps> = ({
         ref={topContentRef}
         className="relative z-10 w-full px-5 pt-3 pb-3 flex flex-col items-center flex-shrink-0 origin-top will-change-transform"
       >
-        <div className="w-full flex justify-end mb-2.5">
+        <div className="w-full max-w-[340px] flex justify-between items-center mb-2.5">
+          <div className="h-11 px-2.5 rounded-full bg-black/10 dark:bg-white/10 border border-white/[0.16] backdrop-blur-md flex items-center gap-2.5 shadow-sm">
+            <div className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 bg-black/10 dark:bg-white/10">
+              {profile.avatar ? (
+                <img
+                  src={profile.avatar}
+                  alt={profile.name}
+                  className="w-full h-full object-cover rounded-full pointer-events-none"
+                />
+              ) : (
+                <div className="w-full h-full rounded-full bg-gradient-to-tr from-[#E33125] to-[#FF6B6B] flex items-center justify-center text-white font-bold text-[13px] shadow-sm">
+                  {profile.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col justify-center pr-1.5">
+              <span className="text-white text-[13px] font-bold tracking-tight leading-tight">
+                {displayName}
+              </span>
+              <span className="text-white/60 text-[10px] font-medium leading-tight">
+                @{profile.username}
+              </span>
+            </div>
+          </div>
+
           <JellyButton
             type="button"
             onClick={toggleEditMode}
