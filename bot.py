@@ -17,7 +17,7 @@ RENDER_URL = "https://kumpel.onrender.com"
 app = Flask(__name__)
 CORS(app)
 
-bot = telebot.TeleBot(TELEGRAM_TOKEN) if TELEGRAM_TOKEN else None
+bot = telebot.TeleBot(TELEGRAM_TOKEN, threaded=False) if TELEGRAM_TOKEN else None
 
 client = None
 db = None
@@ -61,6 +61,15 @@ if bot:
             first_name = html.escape(message.from_user.first_name or "User")
             code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
             
+            text = (
+                f"Welcome to Kumpel, {first_name}!\n\n"
+                f"Here is your code to login via Kumpel — <tg-spoiler>{code}</tg-spoiler>\n\n"
+                f"Please save the code and don’t delete this chat. It can be requested in the future. Have good finances!"
+            )
+            
+            bot.send_message(message.chat.id, text, parse_mode="HTML")
+            print(f"Message sent to {tg_id} with code {code}", flush=True)
+
             if auth_codes_coll is not None:
                 try:
                     auth_codes_coll.insert_one({
@@ -70,16 +79,9 @@ if bot:
                         "first_name": first_name,
                         "created_at": get_current_msk_time()
                     })
+                    print(f"Code {code} saved to DB", flush=True)
                 except Exception as dbe:
                     print(f"Database insert error: {dbe}", flush=True)
-
-            text = (
-                f"Welcome to Kumpel, {first_name}!\n\n"
-                f"Here is your code to login via Kumpel — <tg-spoiler>{code}</tg-spoiler>\n\n"
-                f"Please save the code and don’t delete this chat. It can be requested in the future. Have good finances!"
-            )
-            bot.send_message(message.chat.id, text, parse_mode="HTML")
-            print(f"Code {code} sent to {tg_id}", flush=True)
         except Exception as e:
             print(f"Error in send_auth_code: {e}", flush=True)
 
@@ -99,7 +101,6 @@ def webhook():
     if bot:
         try:
             json_data = request.get_json(force=True)
-            print(f"Incoming update: {json_data}", flush=True)
             if json_data:
                 update = telebot.types.Update.de_json(json_data)
                 if update:
