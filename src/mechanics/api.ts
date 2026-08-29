@@ -4,7 +4,8 @@ export interface VerifyAuthResponse {
   success: boolean;
   token?: string;
   is_new?: boolean;
-  username?: string;
+  initial_name?: string;
+  initial_username?: string;
   error?: string;
 }
 
@@ -16,14 +17,14 @@ export interface SetupUserPayload {
 }
 
 export interface SyncUserResponse {
-  profile: {
+  profile?: {
     name: string;
     username: string;
     avatar: string | null;
   };
-  balance: number;
-  rate: number;
-  transactions: Array<{
+  balance?: number;
+  rate?: number;
+  transactions?: Array<{
     id: string;
     name: string;
     type: string;
@@ -31,7 +32,7 @@ export interface SyncUserResponse {
     isPositive: boolean;
     date: string;
   }>;
-  market_history: Array<{
+  market_history?: Array<{
     date: string;
     rate: number;
   }>;
@@ -47,9 +48,6 @@ export interface TransferPayload {
 export interface TransferResponse {
   success: boolean;
   error?: string;
-  new_balance?: number;
-  amount?: number;
-  commission?: number;
 }
 
 export interface CreateQRPayload {
@@ -81,59 +79,66 @@ export interface PayQRResponse {
   error?: string;
 }
 
+async function safeFetch<T>(url: string, options?: RequestInit): Promise<T> {
+  try {
+    const res = await fetch(url, options);
+    const text = await res.text();
+    try {
+      return JSON.parse(text) as T;
+    } catch {
+      throw new Error(`Ошибка сервера (${res.status}): ${text.slice(0, 100)}`);
+    }
+  } catch (err: any) {
+    throw new Error(err.message || 'Сетевая ошибка при обращении к серверу');
+  }
+}
+
 export const api = {
   verifyAuth: async (code: string): Promise<VerifyAuthResponse> => {
-    const res = await fetch(`${API_URL}/auth/verify`, {
+    return safeFetch<VerifyAuthResponse>(`${API_URL}/auth/verify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code }),
     });
-    return res.json();
   },
 
   setupUser: async (data: SetupUserPayload): Promise<{ success: boolean }> => {
-    const res = await fetch(`${API_URL}/user/setup`, {
+    return safeFetch<{ success: boolean }>(`${API_URL}/user/setup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return res.json();
   },
 
   syncUser: async (token: string): Promise<SyncUserResponse> => {
-    const res = await fetch(`${API_URL}/user/sync?token=${token}`);
-    return res.json();
+    return safeFetch<SyncUserResponse>(`${API_URL}/user/sync?token=${token}`);
   },
 
   transfer: async (data: TransferPayload): Promise<TransferResponse> => {
-    const res = await fetch(`${API_URL}/transfer`, {
+    return safeFetch<TransferResponse>(`${API_URL}/transfer`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return res.json();
   },
 
   createQR: async (data: CreateQRPayload): Promise<CreateQRResponse> => {
-    const res = await fetch(`${API_URL}/qr/create`, {
+    return safeFetch<CreateQRResponse>(`${API_URL}/qr/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return res.json();
   },
 
   getQRInfo: async (token: string): Promise<QRInfoResponse> => {
-    const res = await fetch(`${API_URL}/qr/info?token=${token}`);
-    return res.json();
+    return safeFetch<QRInfoResponse>(`${API_URL}/qr/info?token=${token}`);
   },
 
   payQR: async (data: PayQRPayload): Promise<PayQRResponse> => {
-    const res = await fetch(`${API_URL}/qr/pay`, {
+    return safeFetch<PayQRResponse>(`${API_URL}/qr/pay`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return res.json();
   },
 };
