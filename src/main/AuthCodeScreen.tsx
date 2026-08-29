@@ -3,18 +3,27 @@ import { useOrientation } from '@/mechanics/useOrientation';
 import { JellyButton } from '@/uis/JellyButton';
 
 interface AuthCodeScreenProps {
+  isActive: boolean;
   onBack: () => void;
   onVerify: (code: string) => void;
 }
 
-export const AuthCodeScreen: React.FC<AuthCodeScreenProps> = ({ onBack, onVerify }) => {
+export const AuthCodeScreen: React.FC<AuthCodeScreenProps> = ({ isActive, onBack, onVerify }) => {
   const tilt = useOrientation(22);
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
-    inputRefs.current[0]?.focus();
-  }, []);
+    if (isActive) {
+      const timer = setTimeout(() => {
+        inputRefs.current[0]?.focus();
+      }, 460);
+      return () => clearTimeout(timer);
+    } else {
+      inputRefs.current.forEach((el) => el?.blur());
+      setCode(['', '', '', '', '', '']);
+    }
+  }, [isActive]);
 
   const handleChange = (index: number, value: string) => {
     const val = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
@@ -91,7 +100,12 @@ export const AuthCodeScreen: React.FC<AuthCodeScreenProps> = ({ onBack, onVerify
 
           <p className="text-white/70 text-[13px] font-medium leading-relaxed px-2">
             Для регистрации с Telegram, получите уникальный код в нашем боте —{' '}
-            <a href="https://t.me/KumpelBankBot" target="_blank" rel="noreferrer" className="text-white underline underline-offset-2">
+            <a
+              href="https://t.me/KumpelBankBot"
+              target="_blank"
+              rel="noreferrer"
+              className="text-white underline underline-offset-2"
+            >
               @KumpelBankBot
             </a>
           </p>
