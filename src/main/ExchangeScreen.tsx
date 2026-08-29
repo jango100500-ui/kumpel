@@ -3,6 +3,10 @@ import { useOrientation } from '@/mechanics/useOrientation';
 
 interface ExchangeScreenProps {
   currentBgImage: string;
+  marketData: {
+    rate: number;
+    history: Array<{ date: string; rate: number }>;
+  };
 }
 
 const PHYSICS = {
@@ -21,8 +25,7 @@ function spring(current: number, target: number, velocity: number, config: typeo
 
 const Timeframes = ['1Д', '7Д', '1М', '3М', 'ВСЕ'];
 
-const TimeframeSelector: React.FC = () => {
-  const [activeTab, setActiveTab] = useState(0);
+const TimeframeSelector: React.FC<{ activeTab: number; onChange: (i: number) => void }> = ({ activeTab, onChange }) => {
   const sliderRef = useRef<HTMLDivElement>(null);
   const tabsRef = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -117,7 +120,7 @@ const TimeframeSelector: React.FC = () => {
         <button
           key={tf}
           ref={(el) => (tabsRef.current[i] = el)}
-          onClick={() => setActiveTab(i)}
+          onClick={() => onChange(i)}
           className="flex-1 relative z-10 flex items-center justify-center outline-none tap-highlight-transparent"
         >
           <span
@@ -133,17 +136,51 @@ const TimeframeSelector: React.FC = () => {
   );
 };
 
-const historyData = [
-  { id: '1', date: '29.08.26, 10:28', event: 'Коррекция рынка', rub: '1.28₽', usd: '0.01$', diff: '+0.03', isPositive: true },
-  { id: '2', date: '28.08.26, 15:14', event: 'Крупная покупка ₭', rub: '1.25₽', usd: '0.01$', diff: '+0.10', isPositive: true },
-  { id: '3', date: '27.08.26, 09:00', event: 'Утренняя сессия', rub: '1.15₽', usd: '0.009$', diff: '-0.02', isPositive: false },
-  { id: '4', date: '25.08.26, 18:45', event: 'Закрытие торгов', rub: '1.17₽', usd: '0.009$', diff: '+0.05', isPositive: true },
-  { id: '5', date: '24.08.26, 12:30', event: 'Внезапный спад', rub: '1.12₽', usd: '0.008$', diff: '-0.15', isPositive: false },
-  { id: '6', date: '23.08.26, 10:00', event: 'Коррекция', rub: '1.27₽', usd: '0.009$', diff: '-0.04', isPositive: false },
-];
-
-export const ExchangeScreen: React.FC<ExchangeScreenProps> = ({ currentBgImage }) => {
+export const ExchangeScreen: React.FC<ExchangeScreenProps> = ({ currentBgImage, marketData }) => {
   const tilt = useOrientation(22);
+  const [selectedTf, setSelectedTf] = useState(4);
+
+  const currentRate = marketData.rate || 1.0;
+  const usdRate = Math.max(0.01, Math.round((currentRate / 95) * 100) / 100);
+
+  const renderChart = () => {
+    if (!marketData.history || marketData.history.length < 2) {
+      return (
+        <div className="w-full h-full flex items-center justify-center text-center px-4">
+          <span className="text-[#8E8E93] text-[12px] font-medium leading-relaxed">
+            Здесь скоро будет статистика<br />(накапливаем историю)
+          </span>
+        </div>
+      );
+    }
+
+    const rates = marketData.history.map((h) => h.rate);
+    const min = Math.min(...rates) * 0.95;
+    const max = Math.max(...rates) * 1.05;
+    const range = Math.max(0.1, max - min);
+
+    const points = rates.map((r, idx) => {
+      const x = (idx / (rates.length - 1)) * 100;
+      const y = 45 - ((r - min) / range) * 35;
+      return `${x},${y}`;
+    });
+
+    const linePath = `M ${points.join(' L ')}`;
+    const areaPath = `M 0,50 L ${points.join(' L ')} L 100,50 Z`;
+
+    return (
+      <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+        <defs>
+          <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#34C759" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#34C759" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={areaPath} fill="url(#chart-grad)" />
+        <path d={linePath} fill="none" stroke="#34C759" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  };
 
   return (
     <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col select-none bg-transparent">
@@ -154,49 +191,35 @@ export const ExchangeScreen: React.FC<ExchangeScreenProps> = ({ currentBgImage }
           transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.12)`,
         }}
       />
-      
+
       <div className="relative z-10 w-full h-full flex flex-col items-center px-5 pt-[66px] pb-[110px]">
-        
-        {/* Блок Справки */}
         <div className="flex-shrink-0 w-full max-w-[340px] bg-white/75 dark:bg-[#1C1C1E]/75 backdrop-blur-[24px] rounded-[24px] shadow-lg border border-white/40 dark:border-white/10 p-4 flex justify-between items-center mb-3">
           <div className="flex flex-col flex-1">
             <span className="text-[12px] font-semibold text-[#8E8E93] mb-0.5">Курс ₭:</span>
-            <span className="text-[22px] font-bold text-black dark:text-white leading-tight">1.28 ₽</span>
-            <span className="text-[11px] font-bold text-[#34C759] tracking-tight mt-0.5">▲ +12% за неделю</span>
+            <span className="text-[22px] font-bold text-black dark:text-white leading-tight">
+              {currentRate.toFixed(2)} ₽
+            </span>
+            <span className="text-[11px] font-bold text-[#34C759] tracking-tight mt-0.5">
+              ▲ +12% за неделю
+            </span>
           </div>
-          
+
           <div className="w-[1px] h-12 bg-black/10 dark:bg-white/10 mx-3 rounded-full" />
-          
+
           <div className="flex flex-col flex-1 items-end text-right">
             <span className="text-[12px] font-semibold text-[#8E8E93] mb-0.5">Курс ₭:</span>
-            <span className="text-[22px] font-bold text-black dark:text-white leading-tight">0.01 $</span>
-            <span className="text-[11px] font-bold text-[#34C759] tracking-tight mt-0.5">▲ +12% за неделю</span>
+            <span className="text-[22px] font-bold text-black dark:text-white leading-tight">
+              {usdRate} $
+            </span>
+            <span className="text-[11px] font-bold text-[#34C759] tracking-tight mt-0.5">
+              ▲ +12% за неделю
+            </span>
           </div>
         </div>
 
-        {/* Блок Графика */}
         <div className="flex-shrink-0 w-full max-w-[340px] bg-white/75 dark:bg-[#1C1C1E]/75 backdrop-blur-[24px] rounded-[28px] shadow-lg border border-white/40 dark:border-white/10 p-4 flex flex-col mb-3">
           <div className="w-full h-[140px] relative mb-4 flex items-end">
-            <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
-              <defs>
-                <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#34C759" stopOpacity="0.3" />
-                  <stop offset="100%" stopColor="#34C759" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              <path 
-                d="M0,50 L0,40 L15,25 L25,35 L40,15 L50,28 L65,10 L80,30 L90,15 L100,5 L100,50 Z" 
-                fill="url(#chart-grad)" 
-              />
-              <path 
-                d="M0,40 L15,25 L25,35 L40,15 L50,28 L65,10 L80,30 L90,15 L100,5" 
-                fill="none" 
-                stroke="#34C759" 
-                strokeWidth="2.5" 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-              />
-            </svg>
+            {renderChart()}
             <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20 dark:opacity-10 py-1">
               <div className="w-full border-b border-dashed border-black dark:border-white" />
               <div className="w-full border-b border-dashed border-black dark:border-white" />
@@ -204,49 +227,55 @@ export const ExchangeScreen: React.FC<ExchangeScreenProps> = ({ currentBgImage }
               <div className="w-full border-b border-dashed border-black dark:border-white" />
             </div>
           </div>
-          <TimeframeSelector />
+          <TimeframeSelector activeTab={selectedTf} onChange={setSelectedTf} />
         </div>
 
-        {/* Блок Истории Курса */}
         <div className="flex-1 w-full max-w-[340px] bg-white/75 dark:bg-[#1C1C1E]/75 backdrop-blur-[24px] border border-white/40 dark:border-white/10 rounded-[32px] pt-3 shadow-lg flex flex-col items-center min-h-0">
           <div className="flex-shrink-0 w-9 h-1.5 rounded-full bg-black/20 dark:bg-white/20 pointer-events-none mb-3" />
           <span className="flex-shrink-0 text-[#8E8E93] text-[13px] font-medium tracking-tight mb-4">
             История курса
           </span>
-          
-          <div className="flex-1 w-full px-2 pb-4 overflow-y-auto scroll-y-touch flex flex-col gap-2.5">
-            {historyData.map((item) => (
-              <div
-                key={item.id}
-                className="w-full h-[52px] px-4 rounded-full bg-white/40 dark:bg-white/5 border border-white/40 dark:border-white/5 shadow-sm flex items-center justify-between flex-shrink-0"
-              >
-                <div className="flex flex-col">
-                  <span className="text-black dark:text-white text-[13px] font-semibold tracking-tight leading-tight mb-0.5">
-                    {item.date}
-                  </span>
-                  <span className="text-[#8E8E93] text-[11px] font-medium leading-tight">
-                    {item.event}
-                  </span>
-                </div>
 
-                <div className="flex flex-col items-end">
-                  <div className="flex items-center gap-1 mb-0.5">
-                    <span className="text-black dark:text-white text-[14px] font-bold tracking-tight leading-tight">
-                      {item.rub}
+          <div className="flex-1 w-full px-2 pb-4 overflow-y-auto scroll-y-touch flex flex-col gap-2.5">
+            {marketData.history.length === 0 ? (
+              <div className="w-full flex-1 flex items-center justify-center py-6 text-center">
+                <span className="text-[#8E8E93] text-[13px] font-medium">
+                  История курса формируется
+                </span>
+              </div>
+            ) : (
+              marketData.history.slice().reverse().map((item, idx) => (
+                <div
+                  key={`${item.date}-${idx}`}
+                  className="w-full h-[52px] px-4 rounded-full bg-white/40 dark:bg-white/5 border border-white/40 dark:border-white/5 shadow-sm flex items-center justify-between flex-shrink-0"
+                >
+                  <div className="flex flex-col">
+                    <span className="text-black dark:text-white text-[13px] font-semibold tracking-tight leading-tight mb-0.5">
+                      {item.date}
                     </span>
-                    <span className="text-[#8E8E93] text-[12px] font-semibold leading-tight opacity-75">
-                      ({item.usd})
+                    <span className="text-[#8E8E93] text-[11px] font-medium leading-tight">
+                      Фиксация суток
                     </span>
                   </div>
-                  <span className={`text-[11px] font-bold leading-tight ${item.isPositive ? 'text-[#34C759]' : 'text-[#FF3B30]'}`}>
-                    {item.isPositive ? '▲' : '▼'} {item.diff}
-                  </span>
+
+                  <div className="flex flex-col items-end">
+                    <div className="flex items-center gap-1 mb-0.5">
+                      <span className="text-black dark:text-white text-[14px] font-bold tracking-tight leading-tight">
+                        {item.rate.toFixed(2)} ₽
+                      </span>
+                      <span className="text-[#8E8E93] text-[12px] font-semibold leading-tight opacity-75">
+                        ({(item.rate / 95).toFixed(2)} $)
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-bold leading-tight text-[#34C759]">
+                      ▲ Торги 00:00
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
-
       </div>
     </div>
   );
