@@ -38,6 +38,8 @@ interface MainScreenProps {
   setSavedTheme: (t: ThemeMode) => void;
   setPreviewTheme: (t: ThemeMode | null) => void;
   balance: number;
+  isEditMode: boolean;
+  setIsEditMode: (v: boolean) => void;
 }
 
 const AnimatedDigit: React.FC<{ value: string }> = ({ value }) => {
@@ -84,6 +86,8 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   setSavedTheme,
   setPreviewTheme,
   balance,
+  isEditMode,
+  setIsEditMode,
 }) => {
   const tilt = useOrientation(22);
 
@@ -100,8 +104,6 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   const flipTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const [isFlipped, setIsFlipped] = useState(false);
   const [timeLeft, setTimeLeft] = useState({ d: '0', h: '0', m: '0' });
-
-  const [isEditMode, setIsEditMode] = useState(false);
 
   const [tempStyleId, setTempStyleId] = useState(savedStyleId);
   const [tempBgId, setTempBgId] = useState(savedBgId);
@@ -395,7 +397,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
 
       <div
         ref={sheetRef}
-        className="absolute inset-x-0 z-20 bg-white dark:bg-[#1C1C1E] rounded-t-[36px] flex flex-col items-center shadow-[-0px_-10px_35px_rgba(0,0,0,0.15)] will-change-transform"
+        className="absolute inset-x-0 z-20 bg-white/75 dark:bg-[#1C1C1E]/75 backdrop-blur-[24px] border-t border-white/40 dark:border-white/10 rounded-t-[36px] flex flex-col items-center shadow-[-0px_-10px_35px_rgba(0,0,0,0.15)] will-change-transform"
         style={{
           top: `${MIN_Y}px`,
           height: `calc(100dvh - ${MIN_Y}px)`,
@@ -408,7 +410,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
           onPointerCancel={handleSheetPointerUp}
           className="w-full pt-3 pb-3 flex flex-col items-center cursor-grab active:cursor-grabbing touch-none select-none flex-shrink-0"
         >
-          <div className="w-9 h-1.5 rounded-full bg-black/15 dark:bg-white/20 pointer-events-none" />
+          <div className="w-9 h-1.5 rounded-full bg-black/20 dark:bg-white/20 pointer-events-none" />
           <p className="text-[#8E8E93] text-[13px] font-medium tracking-tight mt-3 text-center pointer-events-none">
             История переводов
           </p>
@@ -418,7 +420,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
           {mockTransactions.map((tx) => (
             <div
               key={tx.id}
-              className="w-full h-14 px-3.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.04] dark:border-white/[0.04] flex items-center justify-between flex-shrink-0"
+              className="w-full h-14 px-3.5 rounded-[18px] bg-white/40 dark:bg-white/5 border border-white/40 dark:border-white/5 shadow-sm flex items-center justify-between flex-shrink-0"
             >
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-black/[0.05] dark:bg-white/[0.1] flex items-center justify-center flex-shrink-0">
@@ -452,7 +454,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
       </div>
 
       <div
-        className="absolute inset-x-0 z-30 bg-white dark:bg-[#1C1C1E] rounded-t-[36px] flex flex-col items-center shadow-[-0px_-10px_35px_rgba(0,0,0,0.15)] will-change-transform"
+        className="absolute inset-x-0 z-30 bg-white/75 dark:bg-[#1C1C1E]/75 backdrop-blur-[24px] border-t border-white/40 dark:border-white/10 rounded-t-[36px] flex flex-col items-center shadow-[-0px_-10px_35px_rgba(0,0,0,0.15)] will-change-transform"
         style={{
           top: `${MAX_Y}px`,
           height: `calc(100dvh - ${MAX_Y}px)`,
@@ -461,7 +463,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
         }}
       >
         <div className="w-full pt-3 pb-2 flex flex-col items-center flex-shrink-0">
-          <div className="w-9 h-1.5 rounded-full bg-black/15 dark:bg-white/20 pointer-events-none" />
+          <div className="w-9 h-1.5 rounded-full bg-black/20 dark:bg-white/20 pointer-events-none" />
         </div>
 
         <div className="w-full max-w-[340px] px-2 pb-[110px] flex-1 overflow-y-auto scroll-y-touch flex flex-col gap-4">
@@ -519,7 +521,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                     className={`h-10 rounded-[12px] text-[12px] font-semibold transition-all duration-200 border ${
                       isSelected 
                         ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white shadow-md scale-[0.98]' 
-                        : 'bg-transparent text-[#8E8E93] border-black/10 dark:border-white/10'
+                        : 'bg-white/40 text-[#8E8E93] dark:bg-white/5 border-white/40 dark:border-white/10'
                     }`}
                   >
                     {names[t]}
