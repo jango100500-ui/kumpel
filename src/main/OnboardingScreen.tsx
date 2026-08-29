@@ -3,6 +3,8 @@ import { useOrientation } from '@/mechanics/useOrientation';
 import { JellyButton } from '@/uis/JellyButton';
 
 interface OnboardingScreenProps {
+  initialName?: string;
+  initialUsername?: string;
   onComplete: (profile: { name: string; username: string; avatar: string | null }) => void;
 }
 
@@ -14,19 +16,25 @@ const RANDOM_NAMES = [
 
 const PLACEHOLDERS = ['Твое имя здесь', 'Введите имя'];
 
-export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
+export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
+  initialName = '',
+  initialUsername = '',
+  onComplete,
+}) => {
   const tilt = useOrientation(22);
-  const [name, setName] = useState('');
-  const [username, setUsername] = useState('');
+  const [name, setName] = useState(initialName);
+  const [username, setUsername] = useState(initialUsername);
   const [avatar, setAvatar] = useState<string | null>(null);
   const [placeholder, setPlaceholder] = useState(PLACEHOLDERS[0]);
   const [isAnimatingName, setIsAnimatingName] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (initialName) setName(initialName);
+    if (initialUsername) setUsername(initialUsername.replace('@', ''));
     const randomPh = PLACEHOLDERS[Math.floor(Math.random() * PLACEHOLDERS.length)];
     setPlaceholder(randomPh);
-  }, []);
+  }, [initialName, initialUsername]);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/[^a-zA-Z]/g, '');
@@ -102,7 +110,6 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
 
       <div className="relative z-10 w-full px-7 pt-16 pb-8 flex flex-col items-center justify-between flex-1 overflow-y-auto scroll-y-touch">
         <div className="w-full max-w-[340px] flex flex-col items-center text-center">
-          
           <div
             onClick={handleAvatarClick}
             className="w-24 h-24 rounded-full relative p-1 bg-black/20 border border-white/[0.2] backdrop-blur-md flex items-center justify-center cursor-pointer shadow-lg active:scale-95 transition-transform mb-5 overflow-hidden"
