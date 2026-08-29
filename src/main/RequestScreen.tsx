@@ -37,7 +37,7 @@ const QRCodeSVG: React.FC = () => {
   ];
 
   return (
-    <div className="relative w-44 h-44 bg-white p-2 rounded-2xl flex items-center justify-center shadow-sm border border-black/5">
+    <div className="relative w-44 h-44 bg-white dark:bg-[#1C1C1E] p-2 rounded-2xl flex items-center justify-center shadow-sm border border-black/5 dark:border-white/10">
       <svg viewBox="0 0 22 22" className="w-full h-full shape-rendering-crispEdges">
         {qrMatrix.map((row, rIdx) =>
           row.map((cell, cIdx) =>
@@ -48,7 +48,7 @@ const QRCodeSVG: React.FC = () => {
                 y={rIdx}
                 width="1"
                 height="1"
-                className="fill-black"
+                className="fill-black dark:fill-white"
               />
             ) : null
           )
@@ -60,7 +60,7 @@ const QRCodeSVG: React.FC = () => {
 
 const JellyAnimatedText: React.FC<{ text: string }> = ({ text }) => {
   return (
-    <span className="inline-flex items-center text-[14px] font-bold tracking-tight uppercase text-black overflow-hidden h-[18px]">
+    <span className="inline-flex items-center text-[14px] font-bold tracking-tight uppercase text-black dark:text-white overflow-hidden h-[18px]">
       {text.split('').map((char, index) => (
         <span
           key={`${text}-${index}-${char}`}
@@ -180,19 +180,19 @@ export const RequestScreen: React.FC<RequestScreenProps> = ({
         <div className="w-full max-w-[340px] flex flex-col items-center gap-2.5 mt-1 mb-auto">
           {isLoading ? (
             <div className="w-full flex flex-col gap-2.5 animate-pulse">
-              <div className="w-full bg-white/70 backdrop-blur-md rounded-[26px] shadow-2xl p-5 flex flex-col items-center">
-                <div className="w-44 h-44 rounded-2xl bg-black/10 mb-4" />
-                <div className="w-48 h-5 rounded-full bg-black/10 mb-2" />
-                <div className="w-56 h-3 rounded-full bg-black/10" />
+              <div className="w-full bg-white/70 dark:bg-[#1C1C1E]/70 backdrop-blur-md rounded-[26px] shadow-2xl p-5 flex flex-col items-center">
+                <div className="w-44 h-44 rounded-2xl bg-black/10 dark:bg-white/10 mb-4" />
+                <div className="w-48 h-5 rounded-full bg-black/10 dark:bg-white/10 mb-2" />
+                <div className="w-56 h-3 rounded-full bg-black/10 dark:bg-white/10" />
               </div>
-              <div className="w-full bg-white/70 backdrop-blur-md rounded-[22px] shadow-xl p-4 flex flex-col gap-3">
-                <div className="w-full h-8 rounded-full bg-black/10" />
-                <div className="w-full h-4 rounded-full bg-black/10" />
+              <div className="w-full bg-white/70 dark:bg-[#1C1C1E]/70 backdrop-blur-md rounded-[22px] shadow-xl p-4 flex flex-col gap-3">
+                <div className="w-full h-8 rounded-full bg-black/10 dark:bg-white/10" />
+                <div className="w-full h-4 rounded-full bg-black/10 dark:bg-white/10" />
               </div>
             </div>
           ) : (
             <div className="w-full flex flex-col gap-2.5 transition-all duration-300 animate-in fade-in">
-              <div className="w-full bg-white rounded-[26px] shadow-2xl p-5 flex flex-col items-center text-center">
+              <div className="w-full bg-white dark:bg-[#1C1C1E] rounded-[26px] shadow-2xl p-5 flex flex-col items-center text-center">
                 <div className="flex items-center gap-2 mb-3.5 h-6">
                   <div className="w-6 h-6 rounded-full bg-[#E33125] flex items-center justify-center p-1 shadow-sm flex-shrink-0">
                     <img
@@ -208,7 +208,7 @@ export const RequestScreen: React.FC<RequestScreenProps> = ({
                   <QRCodeSVG />
                 </div>
 
-                <h3 className="text-black text-[15px] font-bold tracking-tight leading-snug mb-1">
+                <h3 className="text-black dark:text-white text-[15px] font-bold tracking-tight leading-snug mb-1">
                   Отсканируйте для перевода по QR-коду
                 </h3>
 
@@ -217,17 +217,17 @@ export const RequestScreen: React.FC<RequestScreenProps> = ({
                 </p>
               </div>
 
-              <div className="w-full bg-white rounded-[22px] shadow-xl p-4 flex flex-col gap-2.5 text-black">
+              <div className="w-full bg-white dark:bg-[#1C1C1E] rounded-[22px] shadow-xl p-4 flex flex-col gap-3 text-black">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex flex-col">
-                    <span className="text-[13px] font-semibold text-black tracking-tight leading-tight">
+                    <span className="text-black dark:text-white text-[13px] font-semibold tracking-tight leading-tight">
                       Сумма
                     </span>
                     <span className="text-[10px] text-[#8E8E93] font-medium leading-tight">
                       от 10 до 9999₽ за один раз
                     </span>
                   </div>
-                  <div className="flex items-center justify-end bg-black/[0.08] border border-black/[0.12] backdrop-blur-md px-3 py-1.5 rounded-full w-[120px] shadow-inner">
+                  <div className="flex items-center justify-end bg-black/[0.08] dark:bg-white/[0.12] border border-black/[0.12] dark:border-white/[0.12] backdrop-blur-md px-3 py-1.5 rounded-full w-[120px] shadow-inner">
                     <input
                       type="text"
                       inputMode="numeric"
@@ -235,9 +235,9 @@ export const RequestScreen: React.FC<RequestScreenProps> = ({
                       value={amount}
                       onChange={handleAmountChange}
                       placeholder="0"
-                      className="w-full bg-transparent text-right font-bold text-[17px] text-black outline-none placeholder:text-black/30 caret-[#E33125]"
+                      className="w-full bg-transparent text-right font-bold text-[17px] text-black dark:text-white outline-none placeholder:text-black/30 dark:placeholder:text-white/30 caret-[#E33125]"
                     />
-                    <span className="text-[15px] font-bold text-black ml-1 select-none pointer-events-none">
+                    <span className="text-[15px] font-bold text-black dark:text-white ml-1 select-none pointer-events-none">
                       ₽
                     </span>
                   </div>
@@ -245,7 +245,7 @@ export const RequestScreen: React.FC<RequestScreenProps> = ({
 
                 <div className="flex items-center justify-between text-[12px] font-medium text-[#8E8E93]">
                   <span>Комиссия</span>
-                  <span className="font-semibold text-black">0%</span>
+                  <span className="font-semibold text-black dark:text-white">0%</span>
                 </div>
               </div>
             </div>
