@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useOrientation } from '@/mechanics/useOrientation';
 import { JellyButton } from '@/uis/JellyButton';
-import { cardStyles, backgroundOptions } from '@/mechanics/bankStore';
+import { cardStyles, backgroundOptions, ThemeMode } from '@/mechanics/bankStore';
 
 interface Transaction {
   id: string;
@@ -34,6 +34,9 @@ interface MainScreenProps {
   setSavedStyleId: (id: string) => void;
   savedBgId: string;
   setSavedBgId: (id: string) => void;
+  savedTheme: ThemeMode;
+  setSavedTheme: (t: ThemeMode) => void;
+  setPreviewTheme: (t: ThemeMode | null) => void;
   balance: number;
 }
 
@@ -77,6 +80,9 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   setSavedStyleId,
   savedBgId,
   setSavedBgId,
+  savedTheme,
+  setSavedTheme,
+  setPreviewTheme,
   balance,
 }) => {
   const tilt = useOrientation(22);
@@ -99,6 +105,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
 
   const [tempStyleId, setTempStyleId] = useState(savedStyleId);
   const [tempBgId, setTempBgId] = useState(savedBgId);
+  const [tempTheme, setTempTheme] = useState<ThemeMode>(savedTheme);
 
   const [currentBgImage, setCurrentBgImage] = useState('/background2.png');
   const [bgOpacity, setBgOpacity] = useState(1);
@@ -226,11 +233,13 @@ export const MainScreen: React.FC<MainScreenProps> = ({
     if (!isEditMode) {
       setTempStyleId(savedStyleId);
       setTempBgId(savedBgId);
+      setTempTheme(savedTheme);
       targetY.current = MAX_Y;
       currentY.current = MAX_Y;
       setIsEditMode(true);
       setIsFlipped(false);
     } else {
+      setPreviewTheme(null);
       setIsEditMode(false);
     }
   };
@@ -238,6 +247,8 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   const handleSave = () => {
     setSavedStyleId(tempStyleId);
     setSavedBgId(tempBgId);
+    setSavedTheme(tempTheme);
+    setPreviewTheme(null);
     setIsEditMode(false);
   };
 
@@ -485,6 +496,33 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                     >
                       {style.name}
                     </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <p className="text-[#8E8E93] text-[13px] font-medium tracking-tight px-1 mb-2.5">
+              Тема приложения
+            </p>
+
+            <div className="w-full grid grid-cols-3 gap-2.5 px-1 mb-5">
+              {(['light', 'dark', 'system'] as ThemeMode[]).map((t) => {
+                const isSelected = tempTheme === t;
+                const names: Record<ThemeMode, string> = { light: 'Светлая', dark: 'Темная', system: 'Как в системе' };
+                return (
+                  <button
+                    key={t}
+                    onClick={() => {
+                      setTempTheme(t);
+                      setPreviewTheme(t);
+                    }}
+                    className={`h-10 rounded-[12px] text-[12px] font-semibold transition-all duration-200 border ${
+                      isSelected 
+                        ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white shadow-md scale-[0.98]' 
+                        : 'bg-transparent text-[#8E8E93] border-black/10 dark:border-white/10'
+                    }`}
+                  >
+                    {names[t]}
                   </button>
                 );
               })}
