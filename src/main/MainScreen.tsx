@@ -1,51 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { useOrientation } from '@/mechanics/useOrientation';
 import { JellyButton } from '@/uis/JellyButton';
 import { cardStyles, backgroundOptions, ThemeMode } from '@/mechanics/bankStore';
-
-interface Transaction {
-  id: string;
-  name: string;
-  type: string;
-  amount: string;
-  isPositive: boolean;
-  date: string;
-}
-
-const mockTransactions: Transaction[] = [
-  { id: '1', name: 'Алексей', type: 'Перевод', amount: '+500 ₭', isPositive: true, date: 'Вчера, 14:20' },
-  { id: '2', name: 'Максим', type: 'Перевод', amount: '-250 ₭', isPositive: false, date: '06.08' },
-  { id: '3', name: 'Дмитрий', type: 'Перевод', amount: '+1 200 ₭', isPositive: true, date: '04.08' },
-  { id: '4', name: 'Иван', type: 'Перевод', amount: '-400 ₭', isPositive: false, date: '02.08' },
-  { id: '5', name: 'Сергей', type: 'Перевод', amount: '+2 500 ₭', isPositive: true, date: '29.07' },
-  { id: '6', name: 'Артем', type: 'Перевод', amount: '-150 ₭', isPositive: false, date: '25.07' },
-  { id: '7', name: 'Владислав', type: 'Перевод', amount: '+800 ₭', isPositive: true, date: '21.07' },
-  { id: '8', name: 'Никита', type: 'Перевод', amount: '-600 ₭', isPositive: false, date: '18.07' },
-];
-
-const MIN_Y = 56;
-const MAX_Y = 380;
-const AUTH_TRANSITION = 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)';
-
-interface MainScreenProps {
-  onOpenTransfer: () => void;
-  onOpenRequest: () => void;
-  savedStyleId: string;
-  setSavedStyleId: (id: string) => void;
-  savedBgId: string;
-  setSavedBgId: (id: string) => void;
-  savedTheme: ThemeMode;
-  setSavedTheme: (t: ThemeMode) => void;
-  setPreviewTheme: (t: ThemeMode | null) => void;
-  balance: number;
-  isEditMode: boolean;
-  setIsEditMode: (v: boolean) => void;
-  profile: {
-    name: string;
-    username: string;
-    avatar: string | null;
-  };
-}
 
 const AnimatedDigit: React.FC<{ value: string }> = ({ value }) => {
   const [current, setCurrent] = useState(value);
@@ -80,6 +35,34 @@ const EMVChip: React.FC = () => (
   </div>
 );
 
+interface MainScreenProps {
+  onOpenTransfer: () => void;
+  onOpenRequest: () => void;
+  savedStyleId: string;
+  setSavedStyleId: (id: string) => void;
+  savedBgId: string;
+  setSavedBgId: (id: string) => void;
+  savedTheme: ThemeMode;
+  setSavedTheme: (t: ThemeMode) => void;
+  setPreviewTheme: (t: ThemeMode | null) => void;
+  balance: number;
+  transactions: Array<{
+    id: string;
+    name: string;
+    type: string;
+    amount: string;
+    isPositive: boolean;
+    date: string;
+  }>;
+  isEditMode: boolean;
+  setIsEditMode: (v: boolean) => void;
+  profile: {
+    name: string;
+    username: string;
+    avatar: string | null;
+  };
+}
+
 export const MainScreen: React.FC<MainScreenProps> = ({
   onOpenTransfer,
   onOpenRequest,
@@ -91,18 +74,17 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   setSavedTheme,
   setPreviewTheme,
   balance,
+  transactions,
   isEditMode,
   setIsEditMode,
   profile,
 }) => {
-  const tilt = useOrientation(22);
-
   const sheetRef = useRef<HTMLDivElement>(null);
   const topContentRef = useRef<HTMLDivElement>(null);
   const historyListRef = useRef<HTMLDivElement>(null);
 
-  const currentY = useRef(MAX_Y);
-  const targetY = useRef(MAX_Y);
+  const currentY = useRef(380);
+  const targetY = useRef(380);
   const isDraggingSheet = useRef(false);
   const dragStartY = useRef(0);
   const startDragY = useRef(0);
@@ -116,35 +98,23 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   const [tempBgId, setTempBgId] = useState(savedBgId);
   const [tempTheme, setTempTheme] = useState<ThemeMode>(savedTheme);
 
-  const [currentBgImage, setCurrentBgImage] = useState('/background2.png');
-  const [bgOpacity, setBgOpacity] = useState(1);
-
   const activeStyle = cardStyles.find((s) => s.id === (isEditMode ? tempStyleId : savedStyleId)) || cardStyles[0];
-  const activeBg = backgroundOptions.find((b) => b.id === (isEditMode ? tempBgId : savedBgId)) || backgroundOptions[0];
 
   useEffect(() => {
-    if (activeBg.image !== currentBgImage) {
-      setBgOpacity(0);
-      const timeout = setTimeout(() => {
-        setCurrentBgImage(activeBg.image);
-        setBgOpacity(1);
-      }, 160);
-      return () => clearTimeout(timeout);
-    }
-  }, [activeBg.image, currentBgImage]);
-
-  useEffect(() => {
-    const target = new Date();
-    target.setDate(target.getDate() + 7);
-    const targetTime = target.getTime();
-
     const updateTimer = () => {
-      const now = new Date().getTime();
-      const diff = Math.max(0, targetTime - now);
+      const now = new Date();
+      const nowUtc = now.getTime() + now.getTimezoneOffset() * 60000;
+      const nowMsk = new Date(nowUtc + 3 * 3600000);
+      const day = nowMsk.getDay();
+      const diffDays = day === 0 ? 1 : 8 - day;
+      const nextMon = new Date(nowMsk.getFullYear(), nowMsk.getMonth(), nowMsk.getDate() + diffDays);
+      nextMon.setHours(0, 0, 0, 0);
+
+      const diffMs = Math.max(0, nextMon.getTime() - nowMsk.getTime());
       setTimeLeft({
-        d: Math.floor(diff / (1000 * 60 * 60 * 24)).toString(),
-        h: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString(),
-        m: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString(),
+        d: Math.floor(diffMs / (1000 * 60 * 60 * 24)).toString(),
+        h: Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString(),
+        m: Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60)).toString(),
       });
     };
     updateTimer();
@@ -169,14 +139,14 @@ export const MainScreen: React.FC<MainScreenProps> = ({
 
     if (isEditMode) {
       sheetRef.current.style.transform = `translate3d(0, 100dvh, 0)`;
-      sheetRef.current.style.transition = AUTH_TRANSITION;
+      sheetRef.current.style.transition = 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)';
     } else {
-      sheetRef.current.style.transform = `translate3d(0, ${y - MIN_Y}px, 0)`;
+      sheetRef.current.style.transform = `translate3d(0, ${y - 56}px, 0)`;
       sheetRef.current.style.transition = isDraggingSheet.current ? 'none' : 'transform 400ms cubic-bezier(0.16, 1, 0.3, 1)';
     }
 
-    const clampedY = Math.max(MIN_Y, Math.min(MAX_Y, y));
-    const progress = (clampedY - MIN_Y) / (MAX_Y - MIN_Y);
+    const clampedY = Math.max(56, Math.min(380, y));
+    const progress = (clampedY - 56) / (380 - 56);
 
     const scale = 0.92 + 0.08 * progress;
     const translateY = -15 * (1 - progress);
@@ -220,9 +190,9 @@ export const MainScreen: React.FC<MainScreenProps> = ({
     if (!isDraggingSheet.current || isEditMode) return;
     const delta = e.clientY - dragStartY.current;
     let newY = startDragY.current + delta;
-    if (newY < MIN_Y) {
-      const overshoot = MIN_Y - newY;
-      newY = MIN_Y - overshoot * 0.3;
+    if (newY < 56) {
+      const overshoot = 56 - newY;
+      newY = 56 - overshoot * 0.3;
     }
     currentY.current = newY;
     updateDOM(newY);
@@ -236,9 +206,9 @@ export const MainScreen: React.FC<MainScreenProps> = ({
     } catch {}
 
     const velocity = e.clientY - dragStartY.current;
-    if (velocity < -20) targetY.current = MIN_Y;
-    else if (velocity > 20) targetY.current = MAX_Y;
-    else targetY.current = currentY.current < (MAX_Y + MIN_Y) / 2 ? MIN_Y : MAX_Y;
+    if (velocity < -20) targetY.current = 56;
+    else if (velocity > 20) targetY.current = 380;
+    else targetY.current = currentY.current < (380 + 56) / 2 ? 56 : 380;
 
     rafId.current = requestAnimationFrame(smoothSnap);
   };
@@ -248,8 +218,8 @@ export const MainScreen: React.FC<MainScreenProps> = ({
       setTempStyleId(savedStyleId);
       setTempBgId(savedBgId);
       setTempTheme(savedTheme);
-      targetY.current = MAX_Y;
-      currentY.current = MAX_Y;
+      targetY.current = 380;
+      currentY.current = 380;
       setIsEditMode(true);
       setIsFlipped(false);
     } else {
@@ -279,21 +249,12 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   return (
     <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col select-none bg-transparent">
       <div
-        className="absolute top-0 left-[-50px] right-[-50px] bottom-0 bg-cover bg-center pointer-events-none will-change-transform transition-opacity duration-200 ease-in-out"
-        style={{
-          backgroundImage: `url(${currentBgImage})`,
-          opacity: bgOpacity,
-          transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.12)`,
-        }}
-      />
-
-      <div
         ref={topContentRef}
         className="relative z-10 w-full px-5 pt-3 pb-3 flex flex-col items-center flex-shrink-0 origin-top will-change-transform"
       >
         <div className="w-full max-w-[340px] flex justify-between items-center mb-2.5">
-          <div className="h-11 px-2.5 rounded-full bg-black/10 dark:bg-white/10 border border-white/[0.16] backdrop-blur-md flex items-center gap-2.5 shadow-sm">
-            <div className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 bg-black/10 dark:bg-white/10">
+          <div className="h-11 px-2.5 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center gap-2.5 shadow-sm">
+            <div className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 bg-black/10">
               {profile.avatar ? (
                 <img
                   src={profile.avatar}
@@ -321,7 +282,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
             type="button"
             onClick={toggleEditMode}
             flashColor="bg-white/15"
-            className="w-11 h-11 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center"
+            className="w-11 h-11 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center shadow-sm"
           >
             <img
               src={isEditMode ? '/close.png' : '/edit.png'}
@@ -359,7 +320,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
               <div className="w-full flex justify-between items-end mt-auto">
                 <div className="flex flex-col">
                   <span className="text-[28px] font-bold tracking-tight leading-none mb-1 transition-all duration-300">
-                    {balance}₭
+                    {balance} ₭
                   </span>
                   <span className="text-[15px] font-medium tracking-widest opacity-80">
                     ***5678
@@ -442,8 +403,8 @@ export const MainScreen: React.FC<MainScreenProps> = ({
         ref={sheetRef}
         className="absolute inset-x-0 z-20 bg-white/75 dark:bg-[#1C1C1E]/75 backdrop-blur-[24px] border-t border-white/40 dark:border-white/10 rounded-t-[36px] flex flex-col items-center shadow-[-0px_-10px_35px_rgba(0,0,0,0.15)] will-change-transform"
         style={{
-          top: `${MIN_Y}px`,
-          height: `calc(100dvh - ${MIN_Y}px)`,
+          top: `56px`,
+          height: `calc(100dvh - 56px)`,
         }}
       >
         <div
@@ -463,49 +424,57 @@ export const MainScreen: React.FC<MainScreenProps> = ({
           ref={historyListRef}
           className="w-full max-w-[340px] px-2 pb-[110px] flex-1 overflow-y-auto scroll-y-touch touch-pan-y flex flex-col gap-2.5"
         >
-          {mockTransactions.map((tx) => (
-            <div
-              key={tx.id}
-              className="w-full h-14 px-4 rounded-full bg-white/40 dark:bg-white/5 border border-white/40 dark:border-white/5 shadow-sm flex items-center justify-between flex-shrink-0"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-black/[0.05] dark:bg-white/[0.1] flex items-center justify-center flex-shrink-0">
-                  <img
-                    src="/transfer.png"
-                    alt="Transfer"
-                    className="w-4 h-4 object-contain brightness-0 dark:invert opacity-80 pointer-events-none"
-                  />
+          {transactions.length === 0 ? (
+            <div className="w-full flex-1 flex items-center justify-center py-10 text-center">
+              <span className="text-[#8E8E93] text-[13px] font-medium">
+                Вы еще не совершали переводов
+              </span>
+            </div>
+          ) : (
+            transactions.map((tx) => (
+              <div
+                key={tx.id}
+                className="w-full h-14 px-4 rounded-full bg-white/40 dark:bg-white/5 border border-white/40 dark:border-white/5 shadow-sm flex items-center justify-between flex-shrink-0"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-black/[0.05] dark:bg-white/[0.1] flex items-center justify-center flex-shrink-0">
+                    <img
+                      src="/transfer.png"
+                      alt="Transfer"
+                      className="w-4 h-4 object-contain brightness-0 dark:invert opacity-80 pointer-events-none"
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-black dark:text-white text-[14px] font-semibold tracking-tight leading-tight">
+                      {tx.name}
+                    </span>
+                    <span className="text-[#8E8E93] text-[11px] font-normal leading-tight">
+                      {tx.type}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex flex-col">
+
+                <div className="flex flex-col items-end">
                   <span className="text-black dark:text-white text-[14px] font-semibold tracking-tight leading-tight">
-                    {tx.name}
+                    {tx.amount}
                   </span>
                   <span className="text-[#8E8E93] text-[11px] font-normal leading-tight">
-                    {tx.type}
+                    {tx.date}
                   </span>
                 </div>
               </div>
-
-              <div className="flex flex-col items-end">
-                <span className="text-black dark:text-white text-[14px] font-semibold tracking-tight leading-tight">
-                  {tx.amount}
-                </span>
-                <span className="text-[#8E8E93] text-[11px] font-normal leading-tight">
-                  {tx.date}
-                </span>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
       <div
         className="absolute inset-x-0 z-30 bg-white/75 dark:bg-[#1C1C1E]/75 backdrop-blur-[24px] border-t border-white/40 dark:border-white/10 rounded-t-[36px] flex flex-col items-center shadow-[-0px_-10px_35px_rgba(0,0,0,0.15)] will-change-transform"
         style={{
-          top: `${MAX_Y}px`,
-          height: `calc(100dvh - ${MAX_Y}px)`,
+          top: `380px`,
+          height: `calc(100dvh - 380px)`,
           transform: `translate3d(0, ${isEditMode ? '0' : '100dvh'}, 0)`,
-          transition: AUTH_TRANSITION,
+          transition: 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)',
         }}
       >
         <div className="w-full pt-3 pb-2 flex flex-col items-center flex-shrink-0">
