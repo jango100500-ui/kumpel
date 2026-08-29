@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useOrientation } from '@/mechanics/useOrientation';
 import { JellyButton } from '@/uis/JellyButton';
 import { CardStyle } from '@/mechanics/bankStore';
 
@@ -8,6 +9,7 @@ interface TransferScreenProps {
   onSuccess: (amount: number) => void;
   activeStyle: CardStyle;
   balance: number;
+  currentBgImage: string;
 }
 
 const BarcodePattern: React.FC = () => {
@@ -36,7 +38,9 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
   onSuccess,
   activeStyle,
   balance,
+  currentBgImage,
 }) => {
+  const tilt = useOrientation(22);
   const [amount, setAmount] = useState('');
   const [recipient, setRecipient] = useState('');
   const [errorText, setErrorText] = useState<string | null>(null);
@@ -101,7 +105,7 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
     const num = parseInt(amount, 10);
 
     if (!num || isNaN(num) || num < 10) {
-      setErrorText('Минимальная сумма — 10 ₽');
+      setErrorText('Минимальная сумма — 10 ₭');
       return;
     }
 
@@ -121,6 +125,14 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
 
   return (
     <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col justify-between select-none bg-transparent">
+      
+      <div
+        className="absolute top-0 left-[-50px] right-[-50px] bottom-0 bg-cover bg-center pointer-events-none will-change-transform transition-opacity duration-200"
+        style={{
+          backgroundImage: `url(${currentBgImage})`,
+          transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.12)`,
+        }}
+      />
 
       <div className="relative z-10 w-full px-5 pt-3 pb-6 flex flex-col items-center justify-between flex-1 overflow-y-auto scroll-y-touch">
         <div className="w-full flex justify-between items-center mb-1">
@@ -166,7 +178,7 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
                     Сумма перевода
                   </span>
                   <span className="text-[10px] text-[#8E8E93] font-medium leading-tight">
-                    от 10 до 9999₽ за один раз
+                    от 10 до 9999₭ за один раз
                   </span>
                 </div>
                 <div className="flex items-center justify-end bg-black/[0.08] dark:bg-white/[0.12] border border-black/[0.12] dark:border-white/[0.12] backdrop-blur-md px-3 py-1.5 rounded-full w-[130px] shadow-inner">
@@ -181,7 +193,7 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
                     className="w-full bg-transparent text-right font-bold text-[17px] text-black dark:text-white outline-none placeholder:text-black/30 dark:placeholder:text-white/30 caret-[#E33125]"
                   />
                   <span className="text-[15px] font-bold text-black dark:text-white ml-1 select-none pointer-events-none">
-                    ₽
+                    ₭
                   </span>
                 </div>
               </div>
@@ -219,7 +231,7 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
             <div className="border-t border-dashed border-black/20 dark:border-white/20 mt-3 pt-3 flex flex-col items-center">
               <div className="w-full flex items-center justify-between text-[11px] text-[#8E8E93] font-medium mb-2">
                 <span>Комиссия за перевод</span>
-                <span className="font-semibold text-black dark:text-white">0 ₽ (0%)</span>
+                <span className="font-semibold text-black dark:text-white">0 ₭ (0%)</span>
               </div>
 
               <BarcodePattern />
