@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useOrientation } from '@/mechanics/useOrientation';
 import { JellyButton } from '@/uis/JellyButton';
 import { CardStyle } from '@/mechanics/bankStore';
 
@@ -6,6 +7,7 @@ interface RequestScreenProps {
   isActive: boolean;
   onBack: () => void;
   activeStyle: CardStyle;
+  currentBgImage: string;
 }
 
 const QRCodeSVG: React.FC = () => {
@@ -78,7 +80,9 @@ export const RequestScreen: React.FC<RequestScreenProps> = ({
   isActive,
   onBack,
   activeStyle,
+  currentBgImage,
 }) => {
+  const tilt = useOrientation(22);
   const [isLoading, setIsLoading] = useState(true);
   const [amount, setAmount] = useState('');
   const [isCopied, setIsCopied] = useState(false);
@@ -115,7 +119,7 @@ export const RequestScreen: React.FC<RequestScreenProps> = ({
   const handleShareQR = async () => {
     const num = parseInt(amount, 10);
     const text = num && num > 0
-      ? `Переведите мне ${num} ₽ в приложении Kumpel Bank!`
+      ? `Переведите мне ${num} ₭ в приложении Kumpel Bank!`
       : 'Переведите мне средства в приложении Kumpel Bank!';
 
     if (navigator.share) {
@@ -133,7 +137,7 @@ export const RequestScreen: React.FC<RequestScreenProps> = ({
   const handleCopy = async () => {
     const num = parseInt(amount, 10);
     const text = num && num > 0
-      ? `Переведите мне ${num} ₽ в приложении Kumpel Bank!`
+      ? `Переведите мне ${num} ₭ в приложении Kumpel Bank!`
       : 'Переведите мне средства в приложении Kumpel Bank!';
 
     try {
@@ -149,6 +153,13 @@ export const RequestScreen: React.FC<RequestScreenProps> = ({
 
   return (
     <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col justify-between select-none bg-transparent">
+      <div
+        className="absolute top-0 left-[-50px] right-[-50px] bottom-0 bg-cover bg-center pointer-events-none will-change-transform transition-opacity duration-200"
+        style={{
+          backgroundImage: `url(${currentBgImage})`,
+          transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.12)`,
+        }}
+      />
 
       <div className="relative z-10 w-full px-5 pt-3 pb-6 flex flex-col items-center justify-between flex-1 overflow-y-auto scroll-y-touch">
         <div className="w-full flex justify-between items-center mb-1">
@@ -206,14 +217,14 @@ export const RequestScreen: React.FC<RequestScreenProps> = ({
                 </p>
               </div>
 
-              <div className="w-full bg-white dark:bg-[#1C1C1E] rounded-[22px] shadow-xl p-4 flex flex-col gap-3 text-black">
+              <div className="w-full bg-white dark:bg-[#1C1C1E] rounded-[22px] shadow-xl p-4 flex flex-col gap-2.5 text-black">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex flex-col">
-                    <span className="text-black dark:text-white text-[13px] font-semibold tracking-tight leading-tight">
+                    <span className="text-[13px] font-semibold text-black dark:text-white tracking-tight leading-tight">
                       Сумма
                     </span>
                     <span className="text-[10px] text-[#8E8E93] font-medium leading-tight">
-                      от 10 до 9999₽ за один раз
+                      от 10 до 9999₭ за один раз
                     </span>
                   </div>
                   <div className="flex items-center justify-end bg-black/[0.08] dark:bg-white/[0.12] border border-black/[0.12] dark:border-white/[0.12] backdrop-blur-md px-3 py-1.5 rounded-full w-[120px] shadow-inner">
@@ -227,7 +238,7 @@ export const RequestScreen: React.FC<RequestScreenProps> = ({
                       className="w-full bg-transparent text-right font-bold text-[17px] text-black dark:text-white outline-none placeholder:text-black/30 dark:placeholder:text-white/30 caret-[#E33125]"
                     />
                     <span className="text-[15px] font-bold text-black dark:text-white ml-1 select-none pointer-events-none">
-                      ₽
+                      ₭
                     </span>
                   </div>
                 </div>
