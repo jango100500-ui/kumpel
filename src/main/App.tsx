@@ -7,7 +7,6 @@ import { ExchangeScreen } from './ExchangeScreen';
 import { TransferScreen } from './TransferScreen';
 import { RequestScreen } from './RequestScreen';
 import { TabBar } from '@/uis/TabBar';
-import { useOrientation } from '@/mechanics/useOrientation';
 import { api } from '@/mechanics/api';
 import {
   cardStyles,
@@ -67,7 +66,6 @@ export const App: React.FC = () => {
 
   const activeStyle = cardStyles.find((s) => s.id === savedStyleId) || cardStyles[0];
   const activeBg = backgroundOptions.find((b) => b.id === savedBgId) || backgroundOptions[0];
-  const tilt = useOrientation(22);
 
   const loadData = async (userToken: string) => {
     try {
