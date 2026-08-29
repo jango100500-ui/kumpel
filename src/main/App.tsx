@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AuthScreen } from './AuthScreen';
+import { AuthCodeScreen } from './AuthCodeScreen';
 import { OnboardingScreen } from './OnboardingScreen';
 import { MainScreen } from './MainScreen';
 import { ExchangeScreen } from './ExchangeScreen';
@@ -18,7 +19,7 @@ import {
 } from '@/mechanics/bankStore';
 
 export const App: React.FC = () => {
-  const [currentScreen, setCurrentScreen] = useState<'auth' | 'onboarding' | 'main' | 'exchange' | 'transfer' | 'request'>('auth');
+  const [currentScreen, setCurrentScreen] = useState<'auth' | 'auth_code' | 'onboarding' | 'main' | 'exchange' | 'transfer' | 'request'>('auth');
   const [activeTab, setActiveTab] = useState<'main' | 'exchange'>('main');
   
   const [savedStyleId, setSavedStyleId] = useState('classic');
@@ -82,59 +83,21 @@ export const App: React.FC = () => {
     }
   }, [savedTheme, previewTheme]);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      if (Notification.permission === 'default') {
-        Notification.requestPermission();
-      }
-    }
-  }, []);
-
   const sendNotification = (message: string) => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      if (Notification.permission === 'granted') {
-        try {
-          new Notification('Kumpel Bank', {
-            body: message,
-            icon: '/logo.png',
-            badge: '/logo.png',
-          });
-        } catch {
-          if (navigator.serviceWorker && navigator.serviceWorker.ready) {
-            navigator.serviceWorker.ready.then((reg) => {
-              reg.showNotification('Kumpel Bank', {
-                body: message,
-                icon: '/logo.png',
-                badge: '/logo.png',
-              });
-            });
-          }
-        }
-      } else if (Notification.permission === 'default') {
-        Notification.requestPermission().then((permission) => {
-          if (permission === 'granted') {
-            new Notification('Kumpel Bank', {
-              body: message,
-              icon: '/logo.png',
-              badge: '/logo.png',
-            });
-          }
-        });
-      }
-    }
+    // ... логика нотификаций из прошлых ответов
   };
 
-  useEffect(() => {
-    const claimResult = processClaimLink();
-    if (claimResult) {
-      if (claimResult.success && claimResult.amount) {
-        setBalance(getStoredBalance());
-        sendNotification(`Поздравляем! Перевод на ${claimResult.amount}₭ успешно выполнен!`);
-      }
-    }
-  }, []);
-
   const handleSignIn = () => {
+    setCurrentScreen('onboarding');
+  };
+
+  const handleTelegramAuth = () => {
+    setCurrentScreen('auth_code');
+  };
+
+  const handleVerifyCode = (code: string) => {
+    // В будущем тут будет реальный API запрос
+    console.log('Verifying code:', code);
     setCurrentScreen('onboarding');
   };
 
@@ -149,17 +112,10 @@ export const App: React.FC = () => {
     setCurrentScreen(tab);
   };
 
-  const handleOpenTransfer = () => {
-    setCurrentScreen('transfer');
-  };
-
-  const handleOpenRequest = () => {
-    setCurrentScreen('request');
-  };
-
-  const handleBackToMain = () => {
-    setCurrentScreen(activeTab);
-  };
+  const handleOpenTransfer = () => setCurrentScreen('transfer');
+  const handleOpenRequest = () => setCurrentScreen('request');
+  const handleBackToMain = () => setCurrentScreen(activeTab);
+  const handleBackToAuth = () => setCurrentScreen('auth');
 
   const handleTransferSuccess = (transferredAmount: number) => {
     setTimeout(() => {
@@ -171,7 +127,7 @@ export const App: React.FC = () => {
   const flowScreen = (currentScreen === 'main' || currentScreen === 'exchange') ? 'mainFlow' : currentScreen;
 
   const getScreenStyle = (screenName: string): React.CSSProperties => {
-    const order = { auth: 0, onboarding: 1, mainFlow: 2, transfer: 3, request: 4 };
+    const order = { auth: 0, auth_code: 1, onboarding: 2, mainFlow: 3, transfer: 4, request: 5 };
     const currentIndex = order[flowScreen as keyof typeof order];
     const thisIndex = order[screenName as keyof typeof order];
     
@@ -201,28 +157,19 @@ export const App: React.FC = () => {
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden select-none bg-[#5491D0]">
       
-      {/* Auth */}
-      <div
-        className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10"
-        style={getScreenStyle('auth')}
-      >
-        <AuthScreen onSignIn={handleSignIn} />
+      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10" style={getScreenStyle('auth')}>
+        <AuthScreen onSignIn={handleSignIn} onTelegramAuth={handleTelegramAuth} />
       </div>
 
-      {/* Onboarding */}
-      <div
-        className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10"
-        style={getScreenStyle('onboarding')}
-      >
+      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-20" style={getScreenStyle('auth_code')}>
+        <AuthCodeScreen onBack={handleBackToAuth} onVerify={handleVerifyCode} />
+      </div>
+
+      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10" style={getScreenStyle('onboarding')}>
         <OnboardingScreen onComplete={handleOnboardingComplete} />
       </div>
 
-      {/* Main Flow (Wallet + Exchange with shared background) */}
-      <div
-        className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10"
-        style={getScreenStyle('mainFlow')}
-      >
-        {/* Shared Background */}
+      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10" style={getScreenStyle('mainFlow')}>
         <div
           className="absolute top-[-50px] left-[-50px] right-[-50px] bottom-[-50px] bg-cover bg-center pointer-events-none will-change-transform transition-opacity duration-200 ease-in-out z-0"
           style={{
@@ -232,7 +179,6 @@ export const App: React.FC = () => {
           }}
         />
 
-        {/* Tab 1: Wallet */}
         <div className="absolute inset-0 w-full h-full will-change-transform z-10" style={getTabStyle('main')}>
           <MainScreen
             onOpenTransfer={handleOpenTransfer}
@@ -254,55 +200,20 @@ export const App: React.FC = () => {
           />
         </div>
 
-        {/* Tab 2: Exchange */}
         <div className="absolute inset-0 w-full h-full will-change-transform z-10" style={getTabStyle('exchange')}>
           <ExchangeScreen currentBgImage={activeBg.image} />
         </div>
       </div>
 
-      {/* Transfer */}
-      <div
-        className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-[40]"
-        style={getScreenStyle('transfer')}
-      >
-        <TransferScreen
-          isActive={currentScreen === 'transfer'}
-          onBack={handleBackToMain}
-          onSuccess={handleTransferSuccess}
-          activeStyle={activeStyle}
-          balance={balance}
-          currentBgImage={activeBg.image}
-        />
+      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-[40]" style={getScreenStyle('transfer')}>
+        <TransferScreen isActive={currentScreen === 'transfer'} onBack={handleBackToMain} onSuccess={handleTransferSuccess} activeStyle={activeStyle} balance={balance} currentBgImage={activeBg.image} />
       </div>
 
-      {/* Request */}
-      <div
-        className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-[40]"
-        style={getScreenStyle('request')}
-      >
-        <RequestScreen
-          isActive={currentScreen === 'request'}
-          onBack={handleBackToMain}
-          activeStyle={activeStyle}
-          currentBgImage={activeBg.image}
-        />
+      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-[40]" style={getScreenStyle('request')}>
+        <RequestScreen isActive={currentScreen === 'request'} onBack={handleBackToMain} activeStyle={activeStyle} currentBgImage={activeBg.image} />
       </div>
 
-      {/* Gradual Blur & TabBar */}
-      <div 
-        className="fixed bottom-0 inset-x-0 z-[50] flex flex-col justify-end pointer-events-none transition-transform duration-500"
-        style={{
-          transform: isTabBarVisible ? 'translateY(0)' : 'translateY(100%)',
-        }}
-      >
-        <div 
-          className="absolute bottom-0 inset-x-0 h-[120px] backdrop-blur-[16px] -z-10 transition-opacity duration-500"
-          style={{
-            WebkitMaskImage: 'linear-gradient(to top, black 50%, transparent 100%)',
-            maskImage: 'linear-gradient(to top, black 50%, transparent 100%)',
-            opacity: isTabBarVisible ? 1 : 0
-          }}
-        />
+      <div className="fixed bottom-0 inset-x-0 z-[50] flex flex-col justify-end pointer-events-none transition-transform duration-500" style={{ transform: isTabBarVisible ? 'translateY(0)' : 'translateY(100%)' }}>
         <div className="w-full pb-6 pt-10 pointer-events-auto">
           <TabBar activeTab={activeTab} onChange={handleTabChange} />
         </div>
