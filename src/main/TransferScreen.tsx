@@ -125,7 +125,6 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
 
   return (
     <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col justify-between select-none bg-transparent">
-      
       <div
         className="absolute top-0 left-[-50px] right-[-50px] bottom-0 bg-cover bg-center pointer-events-none will-change-transform transition-opacity duration-200"
         style={{
