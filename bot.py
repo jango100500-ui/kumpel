@@ -10,8 +10,8 @@ from flask_cors import CORS
 from pymongo import MongoClient
 import telebot
 
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-MONGO_URI = os.getenv("MONGO_URI")
+TELEGRAM_TOKEN = (os.getenv("TELEGRAM_TOKEN") or "").strip().strip("'").strip('"')
+MONGO_URI = (os.getenv("MONGO_URI") or "").strip().strip("'").strip('"')
 RENDER_URL = "https://kumpel.onrender.com"
 
 app = Flask(__name__)
@@ -33,9 +33,10 @@ if MONGO_URI:
             MONGO_URI,
             serverSelectionTimeoutMS=5000,
             connectTimeoutMS=5000,
-            socketTimeoutMS=5000
+            socketTimeoutMS=5000,
+            retryWrites=True
         )
-        db = client.get_default_database() if client.get_default_database() is not None else client['kumpel_bank']
+        db = client['kumpel_bank']
         users_coll = db['users']
         auth_codes_coll = db['auth_codes']
         transactions_coll = db['transactions']
@@ -43,7 +44,7 @@ if MONGO_URI:
         qr_coll = db['qr_codes']
         print("Connected to MongoDB successfully", flush=True)
     except Exception as e:
-        print(f"MongoDB connection error: {e}", flush=True)
+        print(f"MongoDB init error: {e}", flush=True)
 
 MSK_TZ = pytz.timezone('Europe/Moscow')
 
@@ -91,7 +92,7 @@ if bot:
                             upsert=True
                         )
                 except Exception as dbe:
-                    print(f"Database auth code lookup error: {dbe}", flush=True)
+                    print(f"Database lookup error in bot: {dbe}", flush=True)
                     if not code:
                         code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
             else:
@@ -106,6 +107,14 @@ if bot:
             print(f"Sent code {code} to {tg_id}", flush=True)
         except Exception as e:
             print(f"Error in send_auth_code: {e}", flush=True)
+
+@app.route('/', methods=['GET'])
+def index():
+    return jsonify({"status": "ok", "service": "Kumpel Bank API"})
+
+@app.route('/api/health', methods=['GET'])
+def health():
+    return jsonify({"status": "ok", "time": get_current_msk_time().isoformat()})
 
 @app.route('/api/set_webhook', methods=['GET'])
 def trigger_set_webhook():
@@ -175,7 +184,7 @@ def process_weekly_payout(user):
 @app.route('/api/auth/verify', methods=['POST'])
 def verify_code():
     if auth_codes_coll is None or users_coll is None:
-        return jsonify({"success": False, "error": "База данных недоступна. Проверьте Network Access в MongoDB Atlas."}), 500
+        return jsonify({"success": False, "error": "База данных недоступна. Проверьте переменную MONGO_URI на Render."}), 500
     
     data = request.json or {}
     code = (data.get('code') or '').strip().upper()
@@ -185,59 +194,67 @@ def verify_code():
         return jsonify({"success": False, "error": "Введите код"}), 400
 
     now = get_current_msk_time()
-    record = auth_codes_coll.find_one({"code": code})
-    if not record:
-        return jsonify({"success": False, "error": "Неверный или устаревший код"}), 400
+    try:
+        record = auth_codes_coll.find_one({"code": code})
+        if not record:
+            return jsonify({"success": False, "error": "Неверный или устаревший код"}), 400
 
-    created_at = record.get("created_at")
-    if isinstance(created_at, datetime):
-        if created_at.tzinfo is None:
-            created_at = MSK_TZ.localize(created_at)
-        if now - created_at > timedelta(hours=24):
-            return jsonify({"success": False, "error": "Срок действия кода (24 часа) истек. Запросите новый в боте."}), 400
+        created_at = record.get("created_at")
+        if isinstance(created_at, datetime):
+            if created_at.tzinfo is None:
+                created_at = MSK_TZ.localize(created_at)
+            if now - created_at > timedelta(hours=24):
+                return jsonify({"success": False, "error": "Срок действия кода (24 часа) истек. Запросите новый в боте."}), 400
+            
+        tg_id = record["tg_id"]
+        user = users_coll.find_one({"tg_id": tg_id})
         
-    tg_id = record["tg_id"]
-    user = users_coll.find_one({"tg_id": tg_id})
-    
-    if not user:
-        users_coll.insert_one({
-            "tg_id": tg_id,
-            "username": record.get("username", f"user_{tg_id}"),
-            "name": record.get("first_name", "User"),
-            "avatar": None,
-            "balance": 300,
-            "last_weekly_payout": now
-        })
+        if not user:
+            users_coll.insert_one({
+                "tg_id": tg_id,
+                "username": record.get("username", f"user_{tg_id}"),
+                "name": record.get("first_name", "User"),
+                "avatar": None,
+                "balance": 300,
+                "last_weekly_payout": now
+            })
+            return jsonify({
+                "success": True,
+                "token": str(tg_id),
+                "is_new": True,
+                "initial_name": record.get("first_name", "User"),
+                "initial_username": record.get("username", f"user_{tg_id}")
+            })
+            
         return jsonify({
             "success": True,
             "token": str(tg_id),
-            "is_new": True,
-            "initial_name": record.get("first_name", "User"),
-            "initial_username": record.get("username", f"user_{tg_id}")
+            "is_new": False,
+            "initial_name": user.get("name", "User"),
+            "initial_username": user.get("username", f"user_{tg_id}")
         })
-        
-    return jsonify({
-        "success": True,
-        "token": str(tg_id),
-        "is_new": False,
-        "initial_name": user.get("name", "User"),
-        "initial_username": user.get("username", f"user_{tg_id}")
-    })
+    except Exception as e:
+        print(f"Auth verify DB exception: {e}", flush=True)
+        return jsonify({"success": False, "error": f"Ошибка базы данных: {str(e)}"}), 500
 
 @app.route('/api/user/setup', methods=['POST'])
 def setup_profile():
     if users_coll is None:
         return jsonify({"success": False}), 500
     data = request.json or {}
-    users_coll.update_one(
-        {"tg_id": int(data['token'])},
-        {"$set": {
-            "name": data.get('name'),
-            "username": (data.get('username') or '').replace('@', '').strip().lower(),
-            "avatar": data.get('avatar')
-        }}
-    )
-    return jsonify({"success": True})
+    try:
+        users_coll.update_one(
+            {"tg_id": int(data['token'])},
+            {"$set": {
+                "name": data.get('name'),
+                "username": (data.get('username') or '').replace('@', '').strip().lower(),
+                "avatar": data.get('avatar')
+            }}
+        )
+        return jsonify({"success": True})
+    except Exception as e:
+        print(f"Setup error: {e}", flush=True)
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/user/sync', methods=['GET'])
 def sync_user():
