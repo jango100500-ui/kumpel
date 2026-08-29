@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { AuthScreen } from './AuthScreen';
+import { OnboardingScreen } from './OnboardingScreen';
 import { MainScreen } from './MainScreen';
 import { ExchangeScreen } from './ExchangeScreen';
 import { TransferScreen } from './TransferScreen';
 import { RequestScreen } from './RequestScreen';
 import { TabBar } from '@/uis/TabBar';
+import { useOrientation } from '@/mechanics/useOrientation';
 import {
   cardStyles,
   backgroundOptions,
@@ -16,7 +18,7 @@ import {
 } from '@/mechanics/bankStore';
 
 export const App: React.FC = () => {
-  const [currentScreen, setCurrentScreen] = useState<'auth' | 'main' | 'exchange' | 'transfer' | 'request'>('auth');
+  const [currentScreen, setCurrentScreen] = useState<'auth' | 'onboarding' | 'main' | 'exchange' | 'transfer' | 'request'>('auth');
   const [activeTab, setActiveTab] = useState<'main' | 'exchange'>('main');
   
   const [savedStyleId, setSavedStyleId] = useState('classic');
@@ -24,11 +26,36 @@ export const App: React.FC = () => {
   const [balance, setBalance] = useState(getStoredBalance());
   const [isEditMode, setIsEditMode] = useState(false);
   
+  const [profile, setProfile] = useState<{
+    name: string;
+    username: string;
+    avatar: string | null;
+  }>({
+    name: 'Kumpel',
+    username: 'username',
+    avatar: null,
+  });
+
   const [savedTheme, setSavedTheme] = useState<ThemeMode>(getStoredTheme());
   const [previewTheme, setPreviewTheme] = useState<ThemeMode | null>(null);
 
   const activeStyle = cardStyles.find((s) => s.id === savedStyleId) || cardStyles[0];
   const activeBg = backgroundOptions.find((b) => b.id === savedBgId) || backgroundOptions[0];
+
+  const tilt = useOrientation(22);
+  const [currentBgImage, setCurrentBgImage] = useState(activeBg.image);
+  const [bgOpacity, setBgOpacity] = useState(1);
+
+  useEffect(() => {
+    if (activeBg.image !== currentBgImage) {
+      setBgOpacity(0);
+      const timeout = setTimeout(() => {
+        setCurrentBgImage(activeBg.image);
+        setBgOpacity(1);
+      }, 160);
+      return () => clearTimeout(timeout);
+    }
+  }, [activeBg.image, currentBgImage]);
 
   useEffect(() => {
     const activeTheme = previewTheme || savedTheme;
@@ -108,6 +135,11 @@ export const App: React.FC = () => {
   }, []);
 
   const handleSignIn = () => {
+    setCurrentScreen('onboarding');
+  };
+
+  const handleOnboardingComplete = (data: { name: string; username: string; avatar: string | null }) => {
+    setProfile(data);
     setCurrentScreen('main');
     setActiveTab('main');
   };
@@ -136,20 +168,33 @@ export const App: React.FC = () => {
   };
 
   const isTabBarVisible = (currentScreen === 'main' || currentScreen === 'exchange') && !isEditMode;
+  const flowScreen = (currentScreen === 'main' || currentScreen === 'exchange') ? 'mainFlow' : currentScreen;
 
   const getScreenStyle = (screenName: string): React.CSSProperties => {
-    const order = { auth: 0, main: 1, exchange: 2, transfer: 3, request: 4 };
-    const currentIndex = order[currentScreen as keyof typeof order];
+    const order = { auth: 0, onboarding: 1, mainFlow: 2, transfer: 3, request: 4 };
+    const currentIndex = order[flowScreen as keyof typeof order];
     const thisIndex = order[screenName as keyof typeof order];
     
     let translateX = '0%';
-    if (thisIndex < currentIndex) translateX = '-100%';
+    if (thisIndex < currentIndex) translateX = '-30%';
     else if (thisIndex > currentIndex) translateX = '100%';
 
     return {
       transform: `translateX(${translateX})`,
       transition: 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)',
-      pointerEvents: currentScreen === screenName ? 'auto' : 'none',
+      pointerEvents: flowScreen === screenName ? 'auto' : 'none',
+    };
+  };
+
+  const getTabStyle = (tabName: 'main' | 'exchange'): React.CSSProperties => {
+    let translateX = '0%';
+    if (activeTab === 'main' && tabName === 'exchange') translateX = '100%';
+    if (activeTab === 'exchange' && tabName === 'main') translateX = '-100%';
+
+    return {
+      transform: `translateX(${translateX})`,
+      transition: 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)',
+      pointerEvents: activeTab === tabName && flowScreen === 'mainFlow' ? 'auto' : 'none',
     };
   };
 
@@ -164,36 +209,55 @@ export const App: React.FC = () => {
         <AuthScreen onSignIn={handleSignIn} />
       </div>
 
-      {/* Main (Wallet) */}
+      {/* Onboarding */}
       <div
         className="absolute inset-0 w-full h-full will-change-transform z-10"
-        style={getScreenStyle('main')}
+        style={getScreenStyle('onboarding')}
       >
-        <MainScreen
-          onOpenTransfer={handleOpenTransfer}
-          onOpenRequest={handleOpenRequest}
-          savedStyleId={savedStyleId}
-          setSavedStyleId={setSavedStyleId}
-          savedBgId={savedBgId}
-          setSavedBgId={setSavedBgId}
-          savedTheme={savedTheme}
-          setSavedTheme={(t) => {
-            setSavedTheme(t);
-            setStoredTheme(t);
-          }}
-          setPreviewTheme={setPreviewTheme}
-          balance={balance}
-          isEditMode={isEditMode}
-          setIsEditMode={setIsEditMode}
-        />
+        <OnboardingScreen onComplete={handleOnboardingComplete} />
       </div>
 
-      {/* Exchange */}
+      {/* Main Flow (Wallet + Exchange with shared background) */}
       <div
         className="absolute inset-0 w-full h-full will-change-transform z-10"
-        style={getScreenStyle('exchange')}
+        style={getScreenStyle('mainFlow')}
       >
-        <ExchangeScreen currentBgImage={activeBg.image} />
+        {/* Shared Background */}
+        <div
+          className="absolute top-[-50px] left-[-50px] right-[-50px] bottom-[-50px] bg-cover bg-center pointer-events-none will-change-transform transition-opacity duration-200 ease-in-out z-0"
+          style={{
+            backgroundImage: `url(${currentBgImage})`,
+            opacity: bgOpacity,
+            transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.12)`,
+          }}
+        />
+
+        {/* Tab 1: Wallet */}
+        <div className="absolute inset-0 w-full h-full will-change-transform z-10" style={getTabStyle('main')}>
+          <MainScreen
+            onOpenTransfer={handleOpenTransfer}
+            onOpenRequest={handleOpenRequest}
+            savedStyleId={savedStyleId}
+            setSavedStyleId={setSavedStyleId}
+            savedBgId={savedBgId}
+            setSavedBgId={setSavedBgId}
+            savedTheme={savedTheme}
+            setSavedTheme={(t) => {
+              setSavedTheme(t);
+              setStoredTheme(t);
+            }}
+            setPreviewTheme={setPreviewTheme}
+            balance={balance}
+            isEditMode={isEditMode}
+            setIsEditMode={setIsEditMode}
+            profile={profile}
+          />
+        </div>
+
+        {/* Tab 2: Exchange */}
+        <div className="absolute inset-0 w-full h-full will-change-transform z-10" style={getTabStyle('exchange')}>
+          <ExchangeScreen currentBgImage={activeBg.image} />
+        </div>
       </div>
 
       {/* Transfer */}
