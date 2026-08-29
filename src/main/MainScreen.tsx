@@ -414,7 +414,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
           </p>
         </div>
 
-        <div className="w-full max-w-[340px] px-2 pb-8 flex-1 overflow-y-auto scroll-y-touch flex flex-col gap-2.5">
+        <div className="w-full max-w-[340px] px-2 pb-[110px] flex-1 overflow-y-auto scroll-y-touch flex flex-col gap-2.5">
           {mockTransactions.map((tx) => (
             <div
               key={tx.id}
@@ -464,7 +464,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
           <div className="w-9 h-1.5 rounded-full bg-black/15 dark:bg-white/20 pointer-events-none" />
         </div>
 
-        <div className="w-full max-w-[340px] px-2 pb-10 flex-1 overflow-y-auto scroll-y-touch flex flex-col gap-4">
+        <div className="w-full max-w-[340px] px-2 pb-[110px] flex-1 overflow-y-auto scroll-y-touch flex flex-col gap-4">
           <div className="flex flex-col flex-shrink-0">
             <p className="text-[#8E8E93] text-[13px] font-medium tracking-tight px-1 mb-2">
               Цвет карты
