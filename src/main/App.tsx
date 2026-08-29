@@ -136,17 +136,30 @@ export const App: React.FC = () => {
 
   const isTabBarVisible = currentScreen === 'main' || currentScreen === 'exchange';
 
+  // Функция для расчета "плоской" анимации листания страниц
+  const getScreenStyle = (screenName: string): React.CSSProperties => {
+    const order = { auth: 0, main: 1, exchange: 2, transfer: 3, request: 4 };
+    const currentIndex = order[currentScreen as keyof typeof order];
+    const thisIndex = order[screenName as keyof typeof order];
+    
+    let translateX = '0%';
+    if (thisIndex < currentIndex) translateX = '-100%';
+    else if (thisIndex > currentIndex) translateX = '100%';
+
+    return {
+      transform: `translateX(${translateX})`,
+      transition: 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)',
+      pointerEvents: currentScreen === screenName ? 'auto' : 'none',
+    };
+  };
+
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden select-none bg-[#5491D0]">
       
       {/* Auth */}
       <div
         className="absolute inset-0 w-full h-full will-change-transform"
-        style={{
-          transform: currentScreen === 'auth' ? 'translateX(0%)' : 'translateX(-30%)',
-          transition: 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)',
-          pointerEvents: currentScreen === 'auth' ? 'auto' : 'none',
-        }}
+        style={getScreenStyle('auth')}
       >
         <AuthScreen onSignIn={handleSignIn} />
       </div>
@@ -154,18 +167,7 @@ export const App: React.FC = () => {
       {/* Main (Wallet) */}
       <div
         className="absolute inset-0 w-full h-full will-change-transform"
-        style={{
-          transform:
-            currentScreen === 'auth'
-              ? 'translateX(100%)'
-              : currentScreen === 'main'
-              ? 'translateX(0%)'
-              : currentScreen === 'exchange'
-              ? 'translateX(-30%)'
-              : 'translateX(-30%)',
-          transition: 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)',
-          pointerEvents: currentScreen === 'main' ? 'auto' : 'none',
-        }}
+        style={getScreenStyle('main')}
       >
         <MainScreen
           onOpenTransfer={handleOpenTransfer}
@@ -187,16 +189,7 @@ export const App: React.FC = () => {
       {/* Exchange */}
       <div
         className="absolute inset-0 w-full h-full will-change-transform"
-        style={{
-          transform:
-            currentScreen === 'exchange'
-              ? 'translateX(0%)'
-              : currentScreen === 'main' || currentScreen === 'auth'
-              ? 'translateX(100%)'
-              : 'translateX(-30%)',
-          transition: 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)',
-          pointerEvents: currentScreen === 'exchange' ? 'auto' : 'none',
-        }}
+        style={getScreenStyle('exchange')}
       >
         <ExchangeScreen 
           currentBgImage={activeBg.image}
@@ -205,12 +198,8 @@ export const App: React.FC = () => {
 
       {/* Transfer */}
       <div
-        className="absolute inset-0 w-full h-full will-change-transform z-[40]"
-        style={{
-          transform: currentScreen === 'transfer' ? 'translateX(0%)' : 'translateX(100%)',
-          transition: 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)',
-          pointerEvents: currentScreen === 'transfer' ? 'auto' : 'none',
-        }}
+        className="absolute inset-0 w-full h-full will-change-transform"
+        style={getScreenStyle('transfer')}
       >
         <TransferScreen
           isActive={currentScreen === 'transfer'}
@@ -224,12 +213,8 @@ export const App: React.FC = () => {
 
       {/* Request */}
       <div
-        className="absolute inset-0 w-full h-full will-change-transform z-[40]"
-        style={{
-          transform: currentScreen === 'request' ? 'translateX(0%)' : 'translateX(100%)',
-          transition: 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)',
-          pointerEvents: currentScreen === 'request' ? 'auto' : 'none',
-        }}
+        className="absolute inset-0 w-full h-full will-change-transform"
+        style={getScreenStyle('request')}
       >
         <RequestScreen
           isActive={currentScreen === 'request'}
@@ -241,7 +226,7 @@ export const App: React.FC = () => {
 
       {/* Gradual Blur & TabBar */}
       <div 
-        className="fixed bottom-0 inset-x-0 z-[35] flex flex-col justify-end pointer-events-none transition-transform duration-500"
+        className="fixed bottom-0 inset-x-0 z-[50] flex flex-col justify-end pointer-events-none transition-transform duration-500"
         style={{
           transform: isTabBarVisible ? 'translateY(0)' : 'translateY(100%)',
         }}
