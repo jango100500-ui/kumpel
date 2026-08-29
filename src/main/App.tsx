@@ -20,14 +20,6 @@ export const App: React.FC = () => {
   const activeBg = backgroundOptions.find((b) => b.id === savedBgId) || backgroundOptions[0];
 
   useEffect(() => {
-    document.body.style.backgroundColor = activeBg.themeColor;
-    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-    if (metaThemeColor) {
-      metaThemeColor.setAttribute('content', activeBg.themeColor);
-    }
-  }, [activeBg.themeColor]);
-
-  useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       if (Notification.permission === 'default') {
         Notification.requestPermission();
@@ -102,10 +94,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div
-      className="relative w-full h-[100dvh] overflow-hidden select-none transition-colors duration-500"
-      style={{ backgroundColor: activeBg.themeColor }}
-    >
+    <div className="relative w-full h-[100dvh] overflow-hidden select-none bg-[#5491D0]">
       <div
         className="absolute inset-0 w-full h-full will-change-transform"
         style={{
