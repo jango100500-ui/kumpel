@@ -32,8 +32,8 @@ if MONGO_URI:
     try:
         client = MongoClient(
             MONGO_URI,
+            tls=True,
             tlsCAFile=certifi.where(),
-            tlsAllowInvalidCertificates=True,
             serverSelectionTimeoutMS=5000,
             connectTimeoutMS=5000,
             socketTimeoutMS=5000
@@ -46,7 +46,7 @@ if MONGO_URI:
         qr_coll = db['qr_codes']
         print("Connected to MongoDB successfully", flush=True)
     except Exception as e:
-        print(f"MongoDB connection init error: {e}", flush=True)
+        print(f"MongoDB init error: {e}", flush=True)
 
 MSK_TZ = pytz.timezone('Europe/Moscow')
 
@@ -190,7 +190,6 @@ def verify_code():
     
     data = request.json or {}
     code = (data.get('code') or '').strip().upper()
-    print(f"Verifying code: '{code}'", flush=True)
     
     if not code:
         return jsonify({"success": False, "error": "Введите код"}), 400
