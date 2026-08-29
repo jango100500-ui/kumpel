@@ -1,5 +1,4 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { useOrientation } from '@/mechanics/useOrientation';
 import { JellyButton } from '@/uis/JellyButton';
 import { cardStyles, backgroundOptions, ThemeMode } from '@/mechanics/bankStore';
 
@@ -89,8 +88,6 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   isEditMode,
   setIsEditMode,
 }) => {
-  const tilt = useOrientation(22);
-
   const sheetRef = useRef<HTMLDivElement>(null);
   const topContentRef = useRef<HTMLDivElement>(null);
   const historyListRef = useRef<HTMLDivElement>(null);
@@ -110,22 +107,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   const [tempBgId, setTempBgId] = useState(savedBgId);
   const [tempTheme, setTempTheme] = useState<ThemeMode>(savedTheme);
 
-  const [currentBgImage, setCurrentBgImage] = useState('/background2.png');
-  const [bgOpacity, setBgOpacity] = useState(1);
-
   const activeStyle = cardStyles.find((s) => s.id === (isEditMode ? tempStyleId : savedStyleId)) || cardStyles[0];
-  const activeBg = backgroundOptions.find((b) => b.id === (isEditMode ? tempBgId : savedBgId)) || backgroundOptions[0];
-
-  useEffect(() => {
-    if (activeBg.image !== currentBgImage) {
-      setBgOpacity(0);
-      const timeout = setTimeout(() => {
-        setCurrentBgImage(activeBg.image);
-        setBgOpacity(1);
-      }, 160);
-      return () => clearTimeout(timeout);
-    }
-  }, [activeBg.image, currentBgImage]);
 
   useEffect(() => {
     const target = new Date();
@@ -270,15 +252,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
 
   return (
     <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col select-none bg-transparent">
-      <div
-        className="absolute top-0 left-[-50px] right-[-50px] bottom-0 bg-cover bg-center pointer-events-none will-change-transform transition-opacity duration-200 ease-in-out"
-        style={{
-          backgroundImage: `url(${currentBgImage})`,
-          opacity: bgOpacity,
-          transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.12)`,
-        }}
-      />
-
+      
       <div
         ref={topContentRef}
         className="relative z-10 w-full px-5 pt-3 pb-3 flex flex-col items-center flex-shrink-0 origin-top will-change-transform"
@@ -369,9 +343,11 @@ export const MainScreen: React.FC<MainScreenProps> = ({
         <div className="w-full max-w-[340px] flex gap-3 mt-3.5">
           <JellyButton
             type="button"
-            onClick={onOpenTransfer}
+            onClick={isEditMode ? undefined : onOpenTransfer}
             flashColor="bg-white/15"
-            className="flex-1 h-12 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center gap-2"
+            className={`flex-1 h-12 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center gap-2 transition-opacity duration-300 ${
+              isEditMode ? 'opacity-40 pointer-events-none' : 'opacity-100'
+            }`}
           >
             <img
               src="/share.png"
@@ -385,9 +361,11 @@ export const MainScreen: React.FC<MainScreenProps> = ({
 
           <JellyButton
             type="button"
-            onClick={onOpenRequest}
+            onClick={isEditMode ? undefined : onOpenRequest}
             flashColor="bg-white/15"
-            className="flex-1 h-12 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center gap-2"
+            className={`flex-1 h-12 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center gap-2 transition-opacity duration-300 ${
+              isEditMode ? 'opacity-40 pointer-events-none' : 'opacity-100'
+            }`}
           >
             <img
               src="/request.png"
