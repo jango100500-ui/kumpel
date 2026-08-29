@@ -75,14 +75,14 @@ export const App: React.FC = () => {
   const loadData = async (userToken: string) => {
     try {
       const res = await api.syncUser(userToken);
-      if (res && !res.error && res.profile) {
-        setProfile(res.profile);
-        setBalance(res.balance || 0);
+      if (!res.error) {
+        setProfile(res.profile!);
+        setBalance(res.balance!);
         setMarketData({
-          rate: res.rate || 1.0,
-          history: res.market_history || [],
+          rate: res.rate!,
+          history: res.market_history!,
         });
-        setTransactions(res.transactions || []);
+        setTransactions(res.transactions!);
         setCurrentScreen('main');
       }
     } catch {}
@@ -108,7 +108,7 @@ export const App: React.FC = () => {
         } else {
           alert('QR-код уже использован или недействителен');
         }
-      }).catch(() => {});
+      });
     }
   }, [token]);
 
@@ -170,8 +170,8 @@ export const App: React.FC = () => {
       } else {
         alert(res.error || 'Неверный код. Запросите код в боте.');
       }
-    } catch (err: any) {
-      alert(err.message || 'Ошибка подключения к серверу');
+    } catch {
+      alert('Ошибка при авторизации (нет доступа к серверу)');
     }
   };
 
