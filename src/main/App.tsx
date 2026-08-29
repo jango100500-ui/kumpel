@@ -203,7 +203,7 @@ export const App: React.FC = () => {
       
       {/* Auth */}
       <div
-        className="absolute inset-0 w-full h-full will-change-transform z-10"
+        className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10"
         style={getScreenStyle('auth')}
       >
         <AuthScreen onSignIn={handleSignIn} />
@@ -211,7 +211,7 @@ export const App: React.FC = () => {
 
       {/* Onboarding */}
       <div
-        className="absolute inset-0 w-full h-full will-change-transform z-10"
+        className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10"
         style={getScreenStyle('onboarding')}
       >
         <OnboardingScreen onComplete={handleOnboardingComplete} />
@@ -219,7 +219,7 @@ export const App: React.FC = () => {
 
       {/* Main Flow (Wallet + Exchange with shared background) */}
       <div
-        className="absolute inset-0 w-full h-full will-change-transform z-10"
+        className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10"
         style={getScreenStyle('mainFlow')}
       >
         {/* Shared Background */}
@@ -262,7 +262,7 @@ export const App: React.FC = () => {
 
       {/* Transfer */}
       <div
-        className="absolute inset-0 w-full h-full will-change-transform z-[40]"
+        className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-[40]"
         style={getScreenStyle('transfer')}
       >
         <TransferScreen
@@ -277,7 +277,7 @@ export const App: React.FC = () => {
 
       {/* Request */}
       <div
-        className="absolute inset-0 w-full h-full will-change-transform z-[40]"
+        className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-[40]"
         style={getScreenStyle('request')}
       >
         <RequestScreen
