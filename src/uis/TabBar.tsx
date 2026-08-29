@@ -103,16 +103,16 @@ export const TabBar: React.FC<TabBarProps> = ({ activeTab, onChange, savedTheme 
       } else {
         state.current.intensity = 1;
         state.current.isMoving = true;
-        if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
+        if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
       }
     }
   }, [activeTab]);
 
   return (
-    <div className="w-[240px] max-w-[90%] mx-auto h-[56px] bg-white/60 dark:bg-black/60 backdrop-blur-[30px] border border-white/40 dark:border-white/10 rounded-[32px] p-1.5 flex shadow-[0_8px_32px_rgba(0,0,0,0.12)] relative">
+    <div className="w-[260px] max-w-[90%] mx-auto h-[68px] bg-white/60 dark:bg-black/60 backdrop-blur-[30px] border border-white/40 dark:border-white/10 rounded-[34px] p-2 flex shadow-[0_8px_32px_rgba(0,0,0,0.12)] relative">
       <div
         ref={sliderRef}
-        className="absolute top-1.5 bottom-1.5 left-0 rounded-[28px] bg-black/10 dark:bg-white/15 border border-transparent z-0 pointer-events-none origin-center will-change-transform transition-colors duration-150"
+        className="absolute top-2 bottom-2 left-0 rounded-[26px] bg-black/10 dark:bg-white/15 border border-transparent z-0 pointer-events-none origin-center will-change-transform transition-colors duration-150"
       />
       
       <button
@@ -121,14 +121,14 @@ export const TabBar: React.FC<TabBarProps> = ({ activeTab, onChange, savedTheme 
         className="flex-1 flex flex-col items-center justify-center relative z-10 outline-none tap-highlight-transparent"
       >
         <img 
-          src="/wallet.png" 
+          src={activeTab === 'main' ? '/walletf.png' : '/walletu.png'} 
           alt="Wallet" 
-          className={`w-5 h-5 object-contain transition-all duration-200 mb-0.5 ${
-            activeTab === 'main' ? 'opacity-100 dark:invert scale-110' : 'opacity-40 dark:invert'
+          className={`w-[22px] h-[22px] object-contain transition-transform duration-200 mb-0.5 ${
+            activeTab === 'main' ? 'dark:invert scale-110' : 'dark:invert opacity-75'
           }`}
         />
-        <span className={`text-[9px] font-semibold transition-colors duration-200 ${
-          activeTab === 'main' ? 'text-black dark:text-white' : 'text-black/40 dark:text-white/40'
+        <span className={`text-[10px] font-semibold transition-colors duration-200 ${
+          activeTab === 'main' ? 'text-black dark:text-white' : 'text-black/50 dark:text-white/50'
         }`}>
           Кошелек
         </span>
@@ -140,14 +140,14 @@ export const TabBar: React.FC<TabBarProps> = ({ activeTab, onChange, savedTheme 
         className="flex-1 flex flex-col items-center justify-center relative z-10 outline-none tap-highlight-transparent"
       >
         <img 
-          src="/birge.png" 
+          src={activeTab === 'exchange' ? '/birgef.png' : '/birgeu.png'} 
           alt="Exchange" 
-          className={`w-5 h-5 object-contain transition-all duration-200 mb-0.5 ${
-            activeTab === 'exchange' ? 'opacity-100 dark:invert scale-110' : 'opacity-40 dark:invert'
+          className={`w-[22px] h-[22px] object-contain transition-transform duration-200 mb-0.5 ${
+            activeTab === 'exchange' ? 'dark:invert scale-110' : 'dark:invert opacity-75'
           }`}
         />
-        <span className={`text-[9px] font-semibold transition-colors duration-200 ${
-          activeTab === 'exchange' ? 'text-black dark:text-white' : 'text-black/40 dark:text-white/40'
+        <span className={`text-[10px] font-semibold transition-colors duration-200 ${
+          activeTab === 'exchange' ? 'text-black dark:text-white' : 'text-black/50 dark:text-white/50'
         }`}>
           Биржа
         </span>
