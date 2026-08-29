@@ -1,9 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useOrientation } from '@/mechanics/useOrientation';
-
-interface ExchangeScreenProps {
-  currentBgImage: string;
-}
 
 const PHYSICS = {
   pos: { k: 380, d: 38, m: 1 },
@@ -138,31 +133,14 @@ const historyData = [
   { id: '2', date: '28.08.26, 15:14', event: 'Крупная покупка ₭', rub: '1.25₽', usd: '0.01$', diff: '+0.10', isPositive: true },
   { id: '3', date: '27.08.26, 09:00', event: 'Утренняя сессия', rub: '1.15₽', usd: '0.009$', diff: '-0.02', isPositive: false },
   { id: '4', date: '25.08.26, 18:45', event: 'Закрытие торгов', rub: '1.17₽', usd: '0.009$', diff: '+0.05', isPositive: true },
-  { id: '5', date: '24.08.26, 12:30', event: 'Стабильный рост', rub: '1.12₽', usd: '0.008$', diff: '+0.01', isPositive: true },
-  { id: '6', date: '23.08.26, 10:00', event: 'Коррекция', rub: '1.11₽', usd: '0.008$', diff: '-0.04', isPositive: false },
+  { id: '5', date: '24.08.26, 12:30', event: 'Внезапный спад', rub: '1.12₽', usd: '0.008$', diff: '-0.15', isPositive: false },
+  { id: '6', date: '23.08.26, 10:00', event: 'Коррекция', rub: '1.27₽', usd: '0.009$', diff: '-0.04', isPositive: false },
 ];
 
-export const ExchangeScreen: React.FC<ExchangeScreenProps> = ({
-  currentBgImage,
-}) => {
-  const tilt = useOrientation(22);
-
+export const ExchangeScreen: React.FC = () => {
   return (
     <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col select-none bg-transparent">
-      <div
-        className="absolute top-0 left-[-50px] right-[-50px] bottom-0 bg-cover bg-center pointer-events-none will-change-transform transition-opacity duration-200 ease-in-out"
-        style={{
-          backgroundImage: `url(${currentBgImage})`,
-          transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.12)`,
-        }}
-      />
-
-      {/* 
-        Обертка всего контента. 
-        pt-[66px] — идеально выравнивает по верхней карточке с MainScreen.
-        pb-[110px] — отступ под TabBar.
-        flex-1 — чтобы занимать всю высоту и позволить внутреннему блоку скроллиться.
-      */}
+      
       <div className="relative z-10 w-full h-full flex flex-col items-center px-5 pt-[66px] pb-[110px]">
         
         {/* Блок Справки */}
@@ -193,11 +171,11 @@ export const ExchangeScreen: React.FC<ExchangeScreenProps> = ({
                 </linearGradient>
               </defs>
               <path 
-                d="M0,50 L0,35 C15,30 20,40 35,25 C45,15 55,25 65,15 C75,5 85,15 100,5 L100,50 Z" 
+                d="M0,50 L0,40 L15,25 L25,35 L40,15 L50,28 L65,10 L80,30 L90,15 L100,5 L100,50 Z" 
                 fill="url(#chart-grad)" 
               />
               <path 
-                d="M0,35 C15,30 20,40 35,25 C45,15 55,25 65,15 C75,5 85,15 100,5" 
+                d="M0,40 L15,25 L25,35 L40,15 L50,28 L65,10 L80,30 L90,15 L100,5" 
                 fill="none" 
                 stroke="#34C759" 
                 strokeWidth="2.5" 
@@ -205,7 +183,6 @@ export const ExchangeScreen: React.FC<ExchangeScreenProps> = ({
                 strokeLinejoin="round" 
               />
             </svg>
-            {/* Декоративные линии сетки */}
             <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20 dark:opacity-10 py-1">
               <div className="w-full border-b border-dashed border-black dark:border-white" />
               <div className="w-full border-b border-dashed border-black dark:border-white" />
@@ -216,14 +193,13 @@ export const ExchangeScreen: React.FC<ExchangeScreenProps> = ({
           <TimeframeSelector />
         </div>
 
-        {/* Блок Истории Курса (Занимает все оставшееся место и имеет внутренний скролл) */}
+        {/* Блок Истории Курса */}
         <div className="flex-1 w-full max-w-[340px] bg-white/75 dark:bg-[#1C1C1E]/75 backdrop-blur-[24px] border border-white/40 dark:border-white/10 rounded-[32px] pt-3 shadow-lg flex flex-col items-center min-h-0">
           <div className="flex-shrink-0 w-9 h-1.5 rounded-full bg-black/20 dark:bg-white/20 pointer-events-none mb-3" />
           <span className="flex-shrink-0 text-[#8E8E93] text-[13px] font-medium tracking-tight mb-4">
             История курса
           </span>
           
-          {/* Скрытый скроллбар */}
           <div className="flex-1 w-full px-2 pb-4 overflow-y-auto scroll-y-touch flex flex-col gap-2.5">
             {historyData.map((item) => (
               <div
