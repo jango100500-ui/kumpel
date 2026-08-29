@@ -29,8 +29,13 @@ qr_coll = None
 
 if MONGO_URI:
     try:
-        client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
-        db = client['kumpel_bank']
+        client = MongoClient(
+            MONGO_URI,
+            serverSelectionTimeoutMS=5000,
+            connectTimeoutMS=5000,
+            socketTimeoutMS=5000
+        )
+        db = client.get_default_database() if client.get_default_database() is not None else client['kumpel_bank']
         users_coll = db['users']
         auth_codes_coll = db['auth_codes']
         transactions_coll = db['transactions']
@@ -59,32 +64,46 @@ if bot:
             tg_id = message.from_user.id
             username = message.from_user.username or f"user_{tg_id}"
             first_name = html.escape(message.from_user.first_name or "User")
-            code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-            
+            now = get_current_msk_time()
+
+            code = None
+            if auth_codes_coll is not None:
+                try:
+                    existing = auth_codes_coll.find_one({"tg_id": tg_id})
+                    if existing and "created_at" in existing:
+                        created_at = existing["created_at"]
+                        if isinstance(created_at, datetime):
+                            if created_at.tzinfo is None:
+                                created_at = MSK_TZ.localize(created_at)
+                            if now - created_at < timedelta(hours=24):
+                                code = existing.get("code")
+
+                    if not code:
+                        code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+                        auth_codes_coll.update_one(
+                            {"tg_id": tg_id},
+                            {"$set": {
+                                "code": code,
+                                "username": username,
+                                "first_name": first_name,
+                                "created_at": now
+                            }},
+                            upsert=True
+                        )
+                except Exception as dbe:
+                    print(f"Database auth code lookup error: {dbe}", flush=True)
+                    if not code:
+                        code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+            else:
+                code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
             text = (
                 f"Welcome to Kumpel, {first_name}!\n\n"
                 f"Here is your code to login via Kumpel — <tg-spoiler>{code}</tg-spoiler>\n\n"
-                f"Please save the code and don’t delete this chat. It can be requested in the future. Have good finances!"
+                f"This code is valid for 24 hours. Please save it and don’t delete this chat. Have good finances!"
             )
-            
             bot.send_message(message.chat.id, text, parse_mode="HTML")
-            print(f"Message sent to {tg_id} with code {code}", flush=True)
-
-            if auth_codes_coll is not None:
-                try:
-                    auth_codes_coll.update_one(
-                        {"tg_id": tg_id},
-                        {"$set": {
-                            "code": code,
-                            "username": username,
-                            "first_name": first_name,
-                            "created_at": get_current_msk_time()
-                        }},
-                        upsert=True
-                    )
-                    print(f"Code {code} saved to DB for {tg_id}", flush=True)
-                except Exception as dbe:
-                    print(f"Database insert error: {dbe}", flush=True)
+            print(f"Sent code {code} to {tg_id}", flush=True)
         except Exception as e:
             print(f"Error in send_auth_code: {e}", flush=True)
 
@@ -165,9 +184,17 @@ def verify_code():
     if not code:
         return jsonify({"success": False, "error": "Введите код"}), 400
 
+    now = get_current_msk_time()
     record = auth_codes_coll.find_one({"code": code})
     if not record:
         return jsonify({"success": False, "error": "Неверный или устаревший код"}), 400
+
+    created_at = record.get("created_at")
+    if isinstance(created_at, datetime):
+        if created_at.tzinfo is None:
+            created_at = MSK_TZ.localize(created_at)
+        if now - created_at > timedelta(hours=24):
+            return jsonify({"success": False, "error": "Срок действия кода (24 часа) истек. Запросите новый в боте."}), 400
         
     tg_id = record["tg_id"]
     user = users_coll.find_one({"tg_id": tg_id})
@@ -179,10 +206,23 @@ def verify_code():
             "name": record.get("first_name", "User"),
             "avatar": None,
             "balance": 300,
-            "last_weekly_payout": get_current_msk_time()
+            "last_weekly_payout": now
         })
-        return jsonify({"success": True, "token": str(tg_id), "is_new": True})
-    return jsonify({"success": True, "token": str(tg_id), "is_new": False})
+        return jsonify({
+            "success": True,
+            "token": str(tg_id),
+            "is_new": True,
+            "initial_name": record.get("first_name", "User"),
+            "initial_username": record.get("username", f"user_{tg_id}")
+        })
+        
+    return jsonify({
+        "success": True,
+        "token": str(tg_id),
+        "is_new": False,
+        "initial_name": user.get("name", "User"),
+        "initial_username": user.get("username", f"user_{tg_id}")
+    })
 
 @app.route('/api/user/setup', methods=['POST'])
 def setup_profile():
@@ -191,7 +231,11 @@ def setup_profile():
     data = request.json or {}
     users_coll.update_one(
         {"tg_id": int(data['token'])},
-        {"$set": {"name": data.get('name'), "username": data.get('username'), "avatar": data.get('avatar')}}
+        {"$set": {
+            "name": data.get('name'),
+            "username": (data.get('username') or '').replace('@', '').strip().lower(),
+            "avatar": data.get('avatar')
+        }}
     )
     return jsonify({"success": True})
 
