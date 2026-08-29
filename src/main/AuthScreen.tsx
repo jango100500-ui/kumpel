@@ -5,22 +5,15 @@ import { JellyButton } from '@/uis/JellyButton';
 
 interface AuthScreenProps {
   onSignIn: () => void;
+  onTelegramAuth: () => void;
 }
 
-export const AuthScreen: React.FC<AuthScreenProps> = ({ onSignIn }) => {
+export const AuthScreen: React.FC<AuthScreenProps> = ({ onSignIn, onTelegramAuth }) => {
   const loc = useLocalization();
   const tilt = useOrientation(22);
 
   return (
     <div className="relative w-full h-full min-h-[100dvh] overflow-hidden flex flex-col justify-between select-none bg-transparent">
-      <div
-        className="absolute inset-[-50px] bg-cover bg-center pointer-events-none will-change-transform"
-        style={{
-          backgroundImage: 'url(/background.png)',
-          transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.12)`,
-        }}
-      />
-
       <div className="relative z-10 flex-1" />
 
       <div className="relative z-10 w-full px-7 pb-10 flex flex-col items-center">
@@ -55,11 +48,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSignIn }) => {
               flashColor="bg-white/15"
               className="h-12 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center"
             >
-              <img
-                src="/google.png"
-                alt="Google"
-                className="w-5 h-5 object-contain brightness-0 invert opacity-75 pointer-events-none"
-              />
+              <img src="/google.png" alt="Google" className="w-5 h-5 object-contain brightness-0 invert opacity-75 pointer-events-none" />
             </JellyButton>
 
             <JellyButton
@@ -67,31 +56,21 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSignIn }) => {
               flashColor="bg-white/15"
               className="h-12 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center"
             >
-              <img
-                src="/apple.png"
-                alt="Apple"
-                className="w-5 h-5 object-contain brightness-0 invert opacity-75 pointer-events-none"
-              />
+              <img src="/apple.png" alt="Apple" className="w-5 h-5 object-contain brightness-0 invert opacity-75 pointer-events-none" />
             </JellyButton>
 
             <JellyButton
               type="button"
+              onClick={onTelegramAuth}
               flashColor="bg-white/15"
               className="h-12 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center"
             >
-              <img
-                src="/telegram.png"
-                alt="Telegram"
-                className="w-5 h-5 object-contain brightness-0 invert opacity-75 pointer-events-none"
-              />
+              <img src="/telegram.png" alt="Telegram" className="w-5 h-5 object-contain brightness-0 invert opacity-75 pointer-events-none" />
             </JellyButton>
           </div>
 
           <p className="mt-7 text-white/60 text-[12px] leading-relaxed text-center">
-            {loc.termsPrefix}{' '}
-            <span className="underline underline-offset-2 text-white/80 cursor-pointer">
-              {loc.termsLink}
-            </span>
+            {loc.termsPrefix} <span className="underline underline-offset-2 text-white/80 cursor-pointer">{loc.termsLink}</span>
           </p>
         </div>
       </div>
