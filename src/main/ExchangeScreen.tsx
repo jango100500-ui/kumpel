@@ -1,4 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useOrientation } from '@/mechanics/useOrientation';
+
+interface ExchangeScreenProps {
+  currentBgImage: string;
+}
 
 const PHYSICS = {
   pos: { k: 380, d: 38, m: 1 },
@@ -137,9 +142,18 @@ const historyData = [
   { id: '6', date: '23.08.26, 10:00', event: 'Коррекция', rub: '1.27₽', usd: '0.009$', diff: '-0.04', isPositive: false },
 ];
 
-export const ExchangeScreen: React.FC = () => {
+export const ExchangeScreen: React.FC<ExchangeScreenProps> = ({ currentBgImage }) => {
+  const tilt = useOrientation(22);
+
   return (
     <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col select-none bg-transparent">
+      <div
+        className="absolute top-0 left-[-50px] right-[-50px] bottom-0 bg-cover bg-center pointer-events-none will-change-transform transition-opacity duration-200 ease-in-out"
+        style={{
+          backgroundImage: `url(${currentBgImage})`,
+          transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.12)`,
+        }}
+      />
       
       <div className="relative z-10 w-full h-full flex flex-col items-center px-5 pt-[66px] pb-[110px]">
         
