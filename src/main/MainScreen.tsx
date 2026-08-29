@@ -93,6 +93,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
 
   const sheetRef = useRef<HTMLDivElement>(null);
   const topContentRef = useRef<HTMLDivElement>(null);
+  const historyListRef = useRef<HTMLDivElement>(null);
 
   const currentY = useRef(MAX_Y);
   const targetY = useRef(MAX_Y);
@@ -179,6 +180,11 @@ export const MainScreen: React.FC<MainScreenProps> = ({
     topContentRef.current.style.transform = `scale(${scale}) translate3d(0, ${translateY}px, 0)`;
     topContentRef.current.style.opacity = `${opacity}`;
     topContentRef.current.style.filter = blurAmount > 0.1 ? `blur(${blurAmount}px)` : 'none';
+
+    if (historyListRef.current) {
+      const availableHeight = Math.max(100, window.innerHeight - clampedY - 70);
+      historyListRef.current.style.maxHeight = `${availableHeight}px`;
+    }
   };
 
   const smoothSnap = () => {
@@ -416,11 +422,14 @@ export const MainScreen: React.FC<MainScreenProps> = ({
           </p>
         </div>
 
-        <div className="w-full max-w-[340px] px-2 pb-[110px] flex-1 overflow-y-auto scroll-y-touch flex flex-col gap-2.5">
+        <div
+          ref={historyListRef}
+          className="w-full max-w-[340px] px-2 pb-[110px] flex-1 overflow-y-auto scroll-y-touch touch-pan-y flex flex-col gap-2.5"
+        >
           {mockTransactions.map((tx) => (
             <div
               key={tx.id}
-              className="w-full h-14 px-3.5 rounded-[18px] bg-white/40 dark:bg-white/5 border border-white/40 dark:border-white/5 shadow-sm flex items-center justify-between flex-shrink-0"
+              className="w-full h-14 px-4 rounded-full bg-white/40 dark:bg-white/5 border border-white/40 dark:border-white/5 shadow-sm flex items-center justify-between flex-shrink-0"
             >
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-black/[0.05] dark:bg-white/[0.1] flex items-center justify-center flex-shrink-0">
