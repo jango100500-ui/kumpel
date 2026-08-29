@@ -118,16 +118,6 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   }, [activeBg.image, currentBgImage]);
 
   useEffect(() => {
-    if (isEditMode) {
-      document.body.style.backgroundColor = activeBg.themeColor;
-      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-      if (metaThemeColor) {
-        metaThemeColor.setAttribute('content', activeBg.themeColor);
-      }
-    }
-  }, [isEditMode, activeBg.themeColor]);
-
-  useEffect(() => {
     const target = new Date();
     target.setDate(target.getDate() + 7);
     const targetTime = target.getTime();
@@ -242,12 +232,6 @@ export const MainScreen: React.FC<MainScreenProps> = ({
       setIsFlipped(false);
     } else {
       setIsEditMode(false);
-      const originalBg = backgroundOptions.find((b) => b.id === savedBgId) || backgroundOptions[0];
-      document.body.style.backgroundColor = originalBg.themeColor;
-      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-      if (metaThemeColor) {
-        metaThemeColor.setAttribute('content', originalBg.themeColor);
-      }
     }
   };
 
