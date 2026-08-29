@@ -8,6 +8,7 @@ import pytz
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pymongo import MongoClient
+from pymongo.server_api import ServerApi
 import certifi
 import telebot
 
@@ -32,7 +33,7 @@ if MONGO_URI:
     try:
         client = MongoClient(
             MONGO_URI,
-            tls=True,
+            server_api=ServerApi('1'),
             tlsCAFile=certifi.where(),
             serverSelectionTimeoutMS=5000,
             connectTimeoutMS=5000,
@@ -44,7 +45,7 @@ if MONGO_URI:
         transactions_coll = db['transactions']
         market_coll = db['market']
         qr_coll = db['qr_codes']
-        print("Connected to MongoDB successfully", flush=True)
+        print("Connected to MongoDB successfully with ServerApi('1')", flush=True)
     except Exception as e:
         print(f"MongoDB init error: {e}", flush=True)
 
@@ -190,6 +191,7 @@ def verify_code():
     
     data = request.json or {}
     code = (data.get('code') or '').strip().upper()
+    print(f"Verifying code: '{code}'", flush=True)
     
     if not code:
         return jsonify({"success": False, "error": "Введите код"}), 400
