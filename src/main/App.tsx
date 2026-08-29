@@ -22,6 +22,7 @@ export const App: React.FC = () => {
   const [savedStyleId, setSavedStyleId] = useState('classic');
   const [savedBgId, setSavedBgId] = useState('classic');
   const [balance, setBalance] = useState(getStoredBalance());
+  const [isEditMode, setIsEditMode] = useState(false);
   
   const [savedTheme, setSavedTheme] = useState<ThemeMode>(getStoredTheme());
   const [previewTheme, setPreviewTheme] = useState<ThemeMode | null>(null);
@@ -134,9 +135,8 @@ export const App: React.FC = () => {
     }, 300);
   };
 
-  const isTabBarVisible = currentScreen === 'main' || currentScreen === 'exchange';
+  const isTabBarVisible = (currentScreen === 'main' || currentScreen === 'exchange') && !isEditMode;
 
-  // Функция для расчета "плоской" анимации листания страниц
   const getScreenStyle = (screenName: string): React.CSSProperties => {
     const order = { auth: 0, main: 1, exchange: 2, transfer: 3, request: 4 };
     const currentIndex = order[currentScreen as keyof typeof order];
@@ -183,6 +183,8 @@ export const App: React.FC = () => {
           }}
           setPreviewTheme={setPreviewTheme}
           balance={balance}
+          isEditMode={isEditMode}
+          setIsEditMode={setIsEditMode}
         />
       </div>
 
@@ -198,7 +200,7 @@ export const App: React.FC = () => {
 
       {/* Transfer */}
       <div
-        className="absolute inset-0 w-full h-full will-change-transform"
+        className="absolute inset-0 w-full h-full will-change-transform z-[40]"
         style={getScreenStyle('transfer')}
       >
         <TransferScreen
@@ -213,7 +215,7 @@ export const App: React.FC = () => {
 
       {/* Request */}
       <div
-        className="absolute inset-0 w-full h-full will-change-transform"
+        className="absolute inset-0 w-full h-full will-change-transform z-[40]"
         style={getScreenStyle('request')}
       >
         <RequestScreen
@@ -232,14 +234,15 @@ export const App: React.FC = () => {
         }}
       >
         <div 
-          className="absolute bottom-0 inset-x-0 h-[120px] backdrop-blur-[12px] -z-10"
+          className="absolute bottom-0 inset-x-0 h-[120px] backdrop-blur-[16px] -z-10 transition-opacity duration-500"
           style={{
             WebkitMaskImage: 'linear-gradient(to top, black 50%, transparent 100%)',
-            maskImage: 'linear-gradient(to top, black 50%, transparent 100%)'
+            maskImage: 'linear-gradient(to top, black 50%, transparent 100%)',
+            opacity: isTabBarVisible ? 1 : 0
           }}
         />
         <div className="w-full pb-6 pt-10 pointer-events-auto">
-          <TabBar activeTab={activeTab} onChange={handleTabChange} savedTheme={previewTheme || savedTheme} />
+          <TabBar activeTab={activeTab} onChange={handleTabChange} />
         </div>
       </div>
     </div>
