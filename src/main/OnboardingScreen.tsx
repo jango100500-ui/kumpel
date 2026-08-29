@@ -100,15 +100,12 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
         className="hidden"
       />
 
-      <div className="relative z-10 w-full px-7 pt-14 pb-8 flex flex-col items-center justify-between flex-1 overflow-y-auto scroll-y-touch">
+      <div className="relative z-10 w-full px-7 pt-16 pb-8 flex flex-col items-center justify-between flex-1 overflow-y-auto scroll-y-touch">
         <div className="w-full max-w-[340px] flex flex-col items-center text-center">
-          <h1 className="text-white text-[23px] font-bold tracking-tight leading-snug mb-7">
-            Давайте познакомимся!<br />Как Вас зовут?
-          </h1>
-
+          
           <div
             onClick={handleAvatarClick}
-            className="w-24 h-24 rounded-full relative p-1 bg-black/15 border border-white/[0.2] backdrop-blur-md flex items-center justify-center cursor-pointer shadow-lg active:scale-95 transition-transform mb-6"
+            className="w-24 h-24 rounded-full relative p-1 bg-black/20 border border-white/[0.2] backdrop-blur-md flex items-center justify-center cursor-pointer shadow-lg active:scale-95 transition-transform mb-5 overflow-hidden"
           >
             {avatar ? (
               <img
@@ -117,17 +114,19 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
                 className="w-full h-full object-cover rounded-full pointer-events-none"
               />
             ) : (
-              <div className="w-full h-full rounded-full border border-white/20 flex items-center justify-center relative overflow-hidden bg-white/5 animate-pulse">
-                <div className="w-8 h-8 rounded-full border-2 border-white/40 border-t-white animate-spin opacity-70" />
+              <div className="w-full h-full rounded-full flex items-center justify-center bg-white/10 animate-pulse transition-opacity duration-500">
+                <img
+                  src="/add.png"
+                  alt="Add Photo"
+                  className="w-7 h-7 object-contain brightness-0 invert opacity-80 pointer-events-none"
+                />
               </div>
             )}
-
-            <div className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-white text-black dark:bg-[#1C1C1E] dark:text-white border-2 border-white/[0.4] flex items-center justify-center shadow-md">
-              <svg className="w-3.5 h-3.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-            </div>
           </div>
+
+          <h1 className="text-white text-[22px] font-bold tracking-tight leading-snug mb-6">
+            Давайте познакомимся!<br />Как Вас зовут?
+          </h1>
 
           <div className="w-full flex flex-col gap-1.5 mb-4">
             <div className="w-full h-12 rounded-full bg-black/15 border border-white/[0.2] backdrop-blur-md flex items-center px-4 justify-between shadow-inner">
