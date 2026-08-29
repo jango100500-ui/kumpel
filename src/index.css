@@ -23,7 +23,7 @@ html, body {
   width: 100vw;
   position: fixed;
   inset: 0;
-  transition: background-color 500ms cubic-bezier(0.32, 0.72, 0, 1);
+  background-color: #5491D0;
 }
 
 .scroll-y-touch {
@@ -72,6 +72,21 @@ html, body {
 }
 .animate-ripple {
   animation: flash-ripple 0.35s ease-out forwards;
+}
+
+@keyframes jelly-pop {
+  0% {
+    transform: translateY(10px) scale(0.5);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(-2px) scale(1.18);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
 }
 
 .jelly-active {
