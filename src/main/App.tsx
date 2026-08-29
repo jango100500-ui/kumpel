@@ -200,31 +200,19 @@ export const App: React.FC = () => {
   };
 
   const isTabBarVisible = (currentScreen === 'main' || currentScreen === 'exchange') && !isEditMode;
-  const flowScreen = (currentScreen === 'main' || currentScreen === 'exchange') ? 'mainFlow' : currentScreen;
 
   const getScreenStyle = (screenName: string): React.CSSProperties => {
-    const order = { auth: 0, auth_code: 1, onboarding: 2, mainFlow: 3, transfer: 4, request: 5 };
-    const cur = order[flowScreen as keyof typeof order];
+    const order = { auth: 0, auth_code: 1, onboarding: 2, main: 3, exchange: 4, transfer: 5, request: 6 };
+    const cur = order[currentScreen as keyof typeof order];
     const ths = order[screenName as keyof typeof order];
-    const isActive = flowScreen === screenName;
+    const isActive = currentScreen === screenName;
+    const isAdjacent = Math.abs(cur - ths) <= 1;
+
     return {
-      transform: `translateX(${ths < cur ? '-30%' : ths > cur ? '100%' : '0%'})`,
+      transform: `translateX(${ths < cur ? '-100%' : ths > cur ? '100%' : '0%'})`,
       transition: 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)',
       pointerEvents: isActive ? 'auto' : 'none',
-      visibility: Math.abs(ths - cur) <= 1 ? 'visible' : 'hidden',
-    };
-  };
-
-  const getTabStyle = (tabName: 'main' | 'exchange'): React.CSSProperties => {
-    let translateX = '0%';
-    if (activeTab === 'main' && tabName === 'exchange') translateX = '100%';
-    if (activeTab === 'exchange' && tabName === 'main') translateX = '-100%';
-
-    return {
-      transform: `translateX(${translateX})`,
-      transition: 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)',
-      pointerEvents: activeTab === tabName && flowScreen === 'mainFlow' ? 'auto' : 'none',
-      visibility: activeTab === tabName && flowScreen === 'mainFlow' ? 'visible' : 'hidden',
+      display: isAdjacent ? 'block' : 'none',
     };
   };
 
@@ -285,10 +273,7 @@ export const App: React.FC = () => {
       )}
 
       <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10" style={getScreenStyle('auth')}>
-        <AuthScreen
-          onSignIn={() => setCurrentScreen('onboarding')}
-          onTelegramAuth={() => setCurrentScreen('auth_code')}
-        />
+        <AuthScreen onTelegramAuth={() => setCurrentScreen('auth_code')} />
       </div>
 
       <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-20" style={getScreenStyle('auth_code')}>
@@ -303,43 +288,33 @@ export const App: React.FC = () => {
         <OnboardingScreen onComplete={handleOnboardingComplete} />
       </div>
 
-      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10" style={getScreenStyle('mainFlow')}>
-        <div
-          className="absolute top-[-50px] left-[-50px] right-[-50px] bottom-[-50px] bg-cover bg-center pointer-events-none transition-opacity duration-200"
-          style={{
-            backgroundImage: `url(${activeBg.image})`,
-            transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.12)`,
+      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10" style={getScreenStyle('main')}>
+        <MainScreen
+          onOpenTransfer={() => setCurrentScreen('transfer')}
+          onOpenRequest={() => setCurrentScreen('request')}
+          savedStyleId={savedStyleId}
+          setSavedStyleId={setSavedStyleId}
+          savedBgId={savedBgId}
+          setSavedBgId={setSavedBgId}
+          savedTheme={savedTheme}
+          setSavedTheme={(t) => {
+            setSavedTheme(t);
+            setStoredTheme(t);
           }}
+          setPreviewTheme={setPreviewTheme}
+          balance={balance}
+          transactions={transactions}
+          isEditMode={isEditMode}
+          setIsEditMode={setIsEditMode}
+          profile={profile}
         />
+      </div>
 
-        <div className="absolute inset-0 w-full h-full will-change-transform z-10" style={getTabStyle('main')}>
-          <MainScreen
-            onOpenTransfer={() => setCurrentScreen('transfer')}
-            onOpenRequest={() => setCurrentScreen('request')}
-            savedStyleId={savedStyleId}
-            setSavedStyleId={setSavedStyleId}
-            savedBgId={savedBgId}
-            setSavedBgId={setSavedBgId}
-            savedTheme={savedTheme}
-            setSavedTheme={(t) => {
-              setSavedTheme(t);
-              setStoredTheme(t);
-            }}
-            setPreviewTheme={setPreviewTheme}
-            balance={balance}
-            transactions={transactions}
-            isEditMode={isEditMode}
-            setIsEditMode={setIsEditMode}
-            profile={profile}
-          />
-        </div>
-
-        <div className="absolute inset-0 w-full h-full will-change-transform z-10" style={getTabStyle('exchange')}>
-          <ExchangeScreen
-            marketData={marketData}
-            currentBgImage={activeBg.image}
-          />
-        </div>
+      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10" style={getScreenStyle('exchange')}>
+        <ExchangeScreen
+          marketData={marketData}
+          currentBgImage={activeBg.image}
+        />
       </div>
 
       <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-[40]" style={getScreenStyle('transfer')}>
@@ -382,7 +357,7 @@ export const App: React.FC = () => {
           }}
         />
         <div className="w-full pb-6 pt-10 pointer-events-auto">
-          <TabBar activeTab={activeTab} onChange={setActiveTab} />
+          <TabBar activeTab={activeTab} onChange={(tab) => { setActiveTab(tab); setCurrentScreen(tab); }} />
         </div>
       </div>
     </div>
