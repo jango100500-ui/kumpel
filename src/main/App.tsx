@@ -206,10 +206,12 @@ export const App: React.FC = () => {
     const order = { auth: 0, auth_code: 1, onboarding: 2, mainFlow: 3, transfer: 4, request: 5 };
     const cur = order[flowScreen as keyof typeof order];
     const ths = order[screenName as keyof typeof order];
+    const isActive = flowScreen === screenName;
     return {
       transform: `translateX(${ths < cur ? '-30%' : ths > cur ? '100%' : '0%'})`,
       transition: 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)',
-      pointerEvents: flowScreen === screenName ? 'auto' : 'none',
+      pointerEvents: isActive ? 'auto' : 'none',
+      visibility: Math.abs(ths - cur) <= 1 ? 'visible' : 'hidden',
     };
   };
 
@@ -222,6 +224,7 @@ export const App: React.FC = () => {
       transform: `translateX(${translateX})`,
       transition: 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)',
       pointerEvents: activeTab === tabName && flowScreen === 'mainFlow' ? 'auto' : 'none',
+      visibility: activeTab === tabName && flowScreen === 'mainFlow' ? 'visible' : 'hidden',
     };
   };
 
@@ -290,6 +293,7 @@ export const App: React.FC = () => {
 
       <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-20" style={getScreenStyle('auth_code')}>
         <AuthCodeScreen
+          isActive={currentScreen === 'auth_code'}
           onBack={() => setCurrentScreen('auth')}
           onVerify={handleVerifyCode}
         />
