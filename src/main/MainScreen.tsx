@@ -384,7 +384,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
 
       <div
         ref={sheetRef}
-        className="absolute inset-x-0 z-20 bg-white rounded-t-[36px] flex flex-col items-center shadow-[-0px_-10px_35px_rgba(0,0,0,0.15)] will-change-transform"
+        className="absolute inset-x-0 z-20 bg-white dark:bg-[#1C1C1E] rounded-t-[36px] flex flex-col items-center shadow-[-0px_-10px_35px_rgba(0,0,0,0.15)] will-change-transform"
         style={{
           top: `${MIN_Y}px`,
           height: `calc(100dvh - ${MIN_Y}px)`,
@@ -397,7 +397,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
           onPointerCancel={handleSheetPointerUp}
           className="w-full pt-3 pb-3 flex flex-col items-center cursor-grab active:cursor-grabbing touch-none select-none flex-shrink-0"
         >
-          <div className="w-9 h-1.5 rounded-full bg-black/15 pointer-events-none" />
+          <div className="w-9 h-1.5 rounded-full bg-black/15 dark:bg-white/20 pointer-events-none" />
           <p className="text-[#8E8E93] text-[13px] font-medium tracking-tight mt-3 text-center pointer-events-none">
             История переводов
           </p>
@@ -407,18 +407,18 @@ export const MainScreen: React.FC<MainScreenProps> = ({
           {mockTransactions.map((tx) => (
             <div
               key={tx.id}
-              className="w-full h-14 px-3.5 rounded-full bg-black/[0.04] border border-black/[0.04] flex items-center justify-between flex-shrink-0"
+              className="w-full h-14 px-3.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.04] dark:border-white/[0.04] flex items-center justify-between flex-shrink-0"
             >
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-black/[0.05] flex items-center justify-center flex-shrink-0">
+                <div className="w-9 h-9 rounded-full bg-black/[0.05] dark:bg-white/[0.1] flex items-center justify-center flex-shrink-0">
                   <img
                     src="/transfer.png"
                     alt="Transfer"
-                    className="w-4 h-4 object-contain brightness-0 opacity-80 pointer-events-none"
+                    className="w-4 h-4 object-contain brightness-0 dark:invert opacity-80 pointer-events-none"
                   />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-black text-[14px] font-semibold tracking-tight leading-tight">
+                  <span className="text-black dark:text-white text-[14px] font-semibold tracking-tight leading-tight">
                     {tx.name}
                   </span>
                   <span className="text-[#8E8E93] text-[11px] font-normal leading-tight">
@@ -428,7 +428,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
               </div>
 
               <div className="flex flex-col items-end">
-                <span className="text-black text-[14px] font-semibold tracking-tight leading-tight">
+                <span className="text-black dark:text-white text-[14px] font-semibold tracking-tight leading-tight">
                   {tx.amount}
                 </span>
                 <span className="text-[#8E8E93] text-[11px] font-normal leading-tight">
@@ -441,7 +441,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
       </div>
 
       <div
-        className="absolute inset-x-0 z-30 bg-white rounded-t-[36px] flex flex-col items-center shadow-[-0px_-10px_35px_rgba(0,0,0,0.15)] will-change-transform"
+        className="absolute inset-x-0 z-30 bg-white dark:bg-[#1C1C1E] rounded-t-[36px] flex flex-col items-center shadow-[-0px_-10px_35px_rgba(0,0,0,0.15)] will-change-transform"
         style={{
           top: `${MAX_Y}px`,
           height: `calc(100dvh - ${MAX_Y}px)`,
@@ -450,7 +450,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
         }}
       >
         <div className="w-full pt-3 pb-2 flex flex-col items-center flex-shrink-0">
-          <div className="w-9 h-1.5 rounded-full bg-black/15 pointer-events-none" />
+          <div className="w-9 h-1.5 rounded-full bg-black/15 dark:bg-white/20 pointer-events-none" />
         </div>
 
         <div className="w-full max-w-[340px] px-2 pb-8 flex-1 overflow-y-auto scroll-y-touch flex flex-col justify-between">
@@ -480,7 +480,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                     </div>
                     <span
                       className={`text-[11px] font-medium transition-colors duration-200 ${
-                        isSelected ? 'text-black' : 'text-[#8E8E93]'
+                        isSelected ? 'text-black dark:text-white' : 'text-[#8E8E93]'
                       }`}
                     >
                       {style.name}
@@ -505,17 +505,17 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                   >
                     <div
                       className={`w-full aspect-[9/13] rounded-[18px] overflow-hidden border-2 transition-all duration-200 p-[2px] ${
-                        isSelected ? 'border-black scale-[0.98]' : 'border-transparent'
+                        isSelected ? 'border-black dark:border-white scale-[0.98]' : 'border-transparent'
                       }`}
                     >
                       <div
-                        className="w-full h-full rounded-[14px] bg-cover bg-center border border-black/5"
+                        className="w-full h-full rounded-[14px] bg-cover bg-center border border-black/5 dark:border-white/10"
                         style={{ backgroundImage: `url(${bg.image})` }}
                       />
                     </div>
                     <span
                       className={`text-[12px] font-medium transition-colors duration-200 ${
-                        isSelected ? 'text-black' : 'text-[#8E8E93]'
+                        isSelected ? 'text-black dark:text-white' : 'text-[#8E8E93]'
                       }`}
                     >
                       {bg.name}
