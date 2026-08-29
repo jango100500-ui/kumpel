@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useOrientation } from '@/mechanics/useOrientation';
 import { JellyButton } from '@/uis/JellyButton';
 import { CardStyle } from '@/mechanics/bankStore';
+import { api } from '@/mechanics/api';
 
 interface TransferScreenProps {
   isActive: boolean;
@@ -10,6 +11,7 @@ interface TransferScreenProps {
   activeStyle: CardStyle;
   balance: number;
   currentBgImage: string;
+  token: string | null;
 }
 
 const BarcodePattern: React.FC = () => {
@@ -39,12 +41,14 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
   activeStyle,
   balance,
   currentBgImage,
+  token,
 }) => {
   const tilt = useOrientation(22);
   const [amount, setAmount] = useState('');
   const [recipient, setRecipient] = useState('');
   const [errorText, setErrorText] = useState<string | null>(null);
   const [receiptMeta, setReceiptMeta] = useState({ number: '000000', date: '', time: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -76,6 +80,7 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
         setAmount('');
         setRecipient('');
         setErrorText(null);
+        setIsSubmitting(false);
       }, 400);
       return () => clearTimeout(clearTimer);
     }
@@ -91,7 +96,6 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
 
     let num = parseInt(raw, 10);
     if (num > 9999) num = 9999;
-    if (num > balance) num = balance;
 
     setAmount(num.toString());
   };
@@ -101,7 +105,13 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
     setRecipient(val);
   };
 
-  const handleIssueCheck = () => {
+  const calculatedCommission = () => {
+    const num = parseInt(amount, 10);
+    if (isNaN(num) || num <= 75) return 0;
+    return Math.ceil(num * 0.05);
+  };
+
+  const handleIssueCheck = async () => {
     const num = parseInt(amount, 10);
 
     if (!num || isNaN(num) || num < 10) {
@@ -109,18 +119,47 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
       return;
     }
 
-    if (num > balance) {
-      setErrorText('Недостаточно средств на балансе');
+    if (!recipient.trim()) {
+      setErrorText('Введите имя получателя');
       return;
     }
 
-    onBack();
-    onSuccess(num);
+    if (!token) {
+      setErrorText('Ошибка авторизации');
+      return;
+    }
+
+    const totalNeeded = num + calculatedCommission();
+    if (totalNeeded > balance) {
+      setErrorText(`Недостаточно средств (нужно ${totalNeeded} ₭ с комиссией)`);
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await api.transfer({
+        token,
+        recipient: recipient.trim(),
+        amount: num,
+      });
+
+      if (res.success) {
+        onBack();
+        onSuccess(num);
+      } else {
+        setErrorText(res.error || 'Ошибка при переводе');
+      }
+    } catch {
+      setErrorText('Сервер недоступен, попробуйте позже');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const isAmountValid = () => {
     const num = parseInt(amount, 10);
-    return !isNaN(num) && num >= 10 && num <= 9999 && num <= balance;
+    const total = num + calculatedCommission();
+    return !isNaN(num) && num >= 10 && num <= 9999 && total <= balance && recipient.trim().length > 0;
   };
 
   return (
@@ -177,7 +216,7 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
                     Сумма перевода
                   </span>
                   <span className="text-[10px] text-[#8E8E93] font-medium leading-tight">
-                    от 10 до 9999₭ за один раз
+                    от 10 до 9999 ₭ за один раз
                   </span>
                 </div>
                 <div className="flex items-center justify-end bg-black/[0.08] dark:bg-white/[0.12] border border-black/[0.12] dark:border-white/[0.12] backdrop-blur-md px-3 py-1.5 rounded-full w-[130px] shadow-inner">
@@ -230,7 +269,9 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
             <div className="border-t border-dashed border-black/20 dark:border-white/20 mt-3 pt-3 flex flex-col items-center">
               <div className="w-full flex items-center justify-between text-[11px] text-[#8E8E93] font-medium mb-2">
                 <span>Комиссия за перевод</span>
-                <span className="font-semibold text-black dark:text-white">0 ₭ (0%)</span>
+                <span className="font-semibold text-black dark:text-white">
+                  {calculatedCommission()} ₭ ({parseInt(amount, 10) > 75 ? '5%' : '0%'})
+                </span>
               </div>
 
               <BarcodePattern />
@@ -256,9 +297,9 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
             onClick={handleIssueCheck}
             flashColor={isAmountValid() ? 'bg-black/10' : 'bg-white/10'}
             className={`w-full h-12 rounded-full flex items-center justify-center font-semibold text-[16px] backdrop-blur-md border transition-all duration-300 ${
-              isAmountValid()
+              isAmountValid() && !isSubmitting
                 ? 'border-white/20 shadow-md'
-                : 'bg-black/15 border-white/[0.16] text-white/50 shadow-none'
+                : 'bg-black/15 border-white/[0.16] text-white/50 shadow-none pointer-events-none'
             }`}
             style={{
               backgroundColor: isAmountValid() ? activeStyle.accentColor : undefined,
@@ -269,7 +310,7 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
                 : undefined,
             }}
           >
-            Выписать чек
+            {isSubmitting ? 'Выписываем чек...' : 'Выписать чек'}
           </JellyButton>
         </div>
       </div>
