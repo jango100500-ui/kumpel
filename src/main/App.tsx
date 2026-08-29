@@ -199,7 +199,6 @@ export const App: React.FC = () => {
         }}
       >
         <ExchangeScreen 
-          activeStyle={activeStyle}
           currentBgImage={activeBg.image}
         />
       </div>
