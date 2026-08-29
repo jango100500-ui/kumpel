@@ -156,10 +156,10 @@ export const App: React.FC = () => {
         if (res.is_new) {
           setCurrentScreen('onboarding');
         } else {
-          loadData(res.token);
+          await loadData(res.token);
         }
       } else {
-        alert(res.error || 'Ошибка авторизации');
+        alert(res.error || 'Неверный код. Запросите новый код в боте.');
       }
     } catch {
       alert('Сервер недоступен, попробуйте позже');
@@ -173,7 +173,7 @@ export const App: React.FC = () => {
       setProfile(data);
       setCurrentScreen('main');
       setActiveTab('main');
-      loadData(token);
+      await loadData(token);
     } catch {
       setCurrentScreen('main');
     }
@@ -186,7 +186,7 @@ export const App: React.FC = () => {
       if (res.success) {
         sendNotification(`Счет на ${qrToPay.amount}₭ успешно оплачен!`);
         setQrToPay(null);
-        loadData(token);
+        await loadData(token);
       } else {
         alert(res.error || 'Не удалось оплатить счет');
         setQrToPay(null);
