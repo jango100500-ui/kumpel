@@ -8,6 +8,7 @@ import pytz
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pymongo import MongoClient
+import certifi
 import telebot
 
 TELEGRAM_TOKEN = (os.getenv("TELEGRAM_TOKEN") or "").strip().strip("'").strip('"')
@@ -31,12 +32,11 @@ if MONGO_URI:
     try:
         client = MongoClient(
             MONGO_URI,
-            tls=True,
+            tlsCAFile=certifi.where(),
             tlsAllowInvalidCertificates=True,
             serverSelectionTimeoutMS=5000,
             connectTimeoutMS=5000,
-            socketTimeoutMS=5000,
-            retryWrites=True
+            socketTimeoutMS=5000
         )
         db = client['kumpel_bank']
         users_coll = db['users']
@@ -44,9 +44,9 @@ if MONGO_URI:
         transactions_coll = db['transactions']
         market_coll = db['market']
         qr_coll = db['qr_codes']
-        print("Connected to MongoDB successfully with TLS bypass", flush=True)
+        print("Connected to MongoDB successfully", flush=True)
     except Exception as e:
-        print(f"MongoDB init error: {e}", flush=True)
+        print(f"MongoDB connection init error: {e}", flush=True)
 
 MSK_TZ = pytz.timezone('Europe/Moscow')
 
