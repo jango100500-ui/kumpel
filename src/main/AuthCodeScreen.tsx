@@ -5,12 +5,13 @@ import { JellyButton } from '@/uis/JellyButton';
 interface AuthCodeScreenProps {
   isActive: boolean;
   onBack: () => void;
-  onVerify: (code: string) => void;
+  onVerify: (code: string) => Promise<void>;
 }
 
 export const AuthCodeScreen: React.FC<AuthCodeScreenProps> = ({ isActive, onBack, onVerify }) => {
   const tilt = useOrientation(22);
   const [code, setCode] = useState(['', '', '', '', '', '']);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -22,8 +23,38 @@ export const AuthCodeScreen: React.FC<AuthCodeScreenProps> = ({ isActive, onBack
     } else {
       inputRefs.current.forEach((el) => el?.blur());
       setCode(['', '', '', '', '', '']);
+      setIsSubmitting(false);
     }
   }, [isActive]);
+
+  const triggerVerification = async (codeArray: string[]) => {
+    const fullCode = codeArray.join('');
+    if (fullCode.length === 6 && !isSubmitting) {
+      setIsSubmitting(true);
+      try {
+        await onVerify(fullCode);
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text').replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 6);
+    if (pasted.length > 0) {
+      const newCode = ['', '', '', '', '', ''];
+      for (let i = 0; i < pasted.length; i++) {
+        newCode[i] = pasted[i];
+      }
+      setCode(newCode);
+      const nextFocus = Math.min(pasted.length, 5);
+      inputRefs.current[nextFocus]?.focus();
+      if (pasted.length === 6) {
+        triggerVerification(newCode);
+      }
+    }
+  };
 
   const handleChange = (index: number, value: string) => {
     const val = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
@@ -36,6 +67,10 @@ export const AuthCodeScreen: React.FC<AuthCodeScreenProps> = ({ isActive, onBack
     if (val && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
+
+    if (newCode.every((c) => c.length === 1)) {
+      triggerVerification(newCode);
+    }
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -45,10 +80,7 @@ export const AuthCodeScreen: React.FC<AuthCodeScreenProps> = ({ isActive, onBack
   };
 
   const handleSubmit = () => {
-    const fullCode = code.join('');
-    if (fullCode.length === 6) {
-      onVerify(fullCode);
-    }
+    triggerVerification(code);
   };
 
   const isComplete = code.every((char) => char.length === 1);
@@ -91,6 +123,7 @@ export const AuthCodeScreen: React.FC<AuthCodeScreenProps> = ({ isActive, onBack
                 ref={(el) => (inputRefs.current[i] = el)}
                 type="text"
                 value={char}
+                onPaste={handlePaste}
                 onChange={(e) => handleChange(i, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(i, e)}
                 className="w-11 h-14 bg-black/20 border border-white/20 backdrop-blur-md rounded-[14px] text-center text-white text-[22px] font-bold outline-none focus:border-white/60 transition-colors shadow-inner"
@@ -117,10 +150,10 @@ export const AuthCodeScreen: React.FC<AuthCodeScreenProps> = ({ isActive, onBack
             onClick={handleSubmit}
             flashColor="bg-black/10"
             className={`w-full h-12 rounded-full flex items-center justify-center font-semibold text-[16px] shadow-md border border-white/20 transition-all duration-300 ${
-              isComplete ? 'bg-white text-black' : 'bg-white/20 text-white/50 pointer-events-none'
+              isComplete && !isSubmitting ? 'bg-white text-black' : 'bg-white/20 text-white/50 pointer-events-none'
             }`}
           >
-            Продолжить
+            {isSubmitting ? 'Проверяем...' : 'Продолжить'}
           </JellyButton>
         </div>
       </div>
