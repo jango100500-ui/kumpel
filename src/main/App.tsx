@@ -5,6 +5,7 @@ import { ExchangeScreen } from './ExchangeScreen';
 import { TransferScreen } from './TransferScreen';
 import { RequestScreen } from './RequestScreen';
 import { TabBar } from '@/uis/TabBar';
+import { useOrientation } from '@/mechanics/useOrientation';
 import {
   cardStyles,
   backgroundOptions,
@@ -14,6 +15,34 @@ import {
   setStoredTheme,
   ThemeMode,
 } from '@/mechanics/bankStore';
+
+const GlobalBackground: React.FC<{ activeBgImage: string }> = ({ activeBgImage }) => {
+  const tilt = useOrientation(22);
+  const [currentBgImage, setCurrentBgImage] = useState(activeBgImage);
+  const [bgOpacity, setBgOpacity] = useState(1);
+
+  useEffect(() => {
+    if (activeBgImage !== currentBgImage) {
+      setBgOpacity(0);
+      const timeout = setTimeout(() => {
+        setCurrentBgImage(activeBgImage);
+        setBgOpacity(1);
+      }, 160);
+      return () => clearTimeout(timeout);
+    }
+  }, [activeBgImage, currentBgImage]);
+
+  return (
+    <div
+      className="absolute top-[-50px] left-[-50px] right-[-50px] bottom-[-50px] bg-cover bg-center pointer-events-none will-change-transform transition-opacity duration-200 ease-in-out z-0"
+      style={{
+        backgroundImage: `url(${currentBgImage})`,
+        opacity: bgOpacity,
+        transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.12)`,
+      }}
+    />
+  );
+};
 
 export const App: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<'auth' | 'main' | 'exchange' | 'transfer' | 'request'>('auth');
@@ -155,10 +184,11 @@ export const App: React.FC = () => {
 
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden select-none bg-[#5491D0]">
-      
+      <GlobalBackground activeBgImage={activeBg.image} />
+
       {/* Auth */}
       <div
-        className="absolute inset-0 w-full h-full will-change-transform"
+        className="absolute inset-0 w-full h-full will-change-transform z-10"
         style={getScreenStyle('auth')}
       >
         <AuthScreen onSignIn={handleSignIn} />
@@ -166,7 +196,7 @@ export const App: React.FC = () => {
 
       {/* Main (Wallet) */}
       <div
-        className="absolute inset-0 w-full h-full will-change-transform"
+        className="absolute inset-0 w-full h-full will-change-transform z-10"
         style={getScreenStyle('main')}
       >
         <MainScreen
@@ -190,12 +220,10 @@ export const App: React.FC = () => {
 
       {/* Exchange */}
       <div
-        className="absolute inset-0 w-full h-full will-change-transform"
+        className="absolute inset-0 w-full h-full will-change-transform z-10"
         style={getScreenStyle('exchange')}
       >
-        <ExchangeScreen 
-          currentBgImage={activeBg.image}
-        />
+        <ExchangeScreen />
       </div>
 
       {/* Transfer */}
@@ -209,7 +237,6 @@ export const App: React.FC = () => {
           onSuccess={handleTransferSuccess}
           activeStyle={activeStyle}
           balance={balance}
-          currentBgImage={activeBg.image}
         />
       </div>
 
@@ -222,7 +249,6 @@ export const App: React.FC = () => {
           isActive={currentScreen === 'request'}
           onBack={handleBackToMain}
           activeStyle={activeStyle}
-          currentBgImage={activeBg.image}
         />
       </div>
 
