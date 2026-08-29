@@ -4,11 +4,10 @@ import { useOrientation } from '@/mechanics/useOrientation';
 import { JellyButton } from '@/uis/JellyButton';
 
 interface AuthScreenProps {
-  onSignIn: () => void;
   onTelegramAuth: () => void;
 }
 
-export const AuthScreen: React.FC<AuthScreenProps> = ({ onSignIn, onTelegramAuth }) => {
+export const AuthScreen: React.FC<AuthScreenProps> = ({ onTelegramAuth }) => {
   const loc = useLocalization();
   const tilt = useOrientation(22);
 
@@ -35,7 +34,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSignIn, onTelegramAuth
 
           <JellyButton
             type="button"
-            onClick={onSignIn}
+            onClick={onTelegramAuth}
             flashColor="bg-black/10"
             className="w-full h-12 bg-white text-black text-[16px] font-semibold rounded-full flex items-center justify-center shadow-none"
           >
@@ -53,6 +52,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSignIn, onTelegramAuth
           <div className="w-full grid grid-cols-3 gap-2.5">
             <JellyButton
               type="button"
+              onClick={onTelegramAuth}
               flashColor="bg-white/15"
               className="h-12 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center"
             >
@@ -65,6 +65,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSignIn, onTelegramAuth
 
             <JellyButton
               type="button"
+              onClick={onTelegramAuth}
               flashColor="bg-white/15"
               className="h-12 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center"
             >
