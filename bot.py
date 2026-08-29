@@ -72,14 +72,17 @@ if bot:
 
             if auth_codes_coll is not None:
                 try:
-                    auth_codes_coll.insert_one({
-                        "code": code,
-                        "tg_id": tg_id,
-                        "username": username,
-                        "first_name": first_name,
-                        "created_at": get_current_msk_time()
-                    })
-                    print(f"Code {code} saved to DB", flush=True)
+                    auth_codes_coll.update_one(
+                        {"tg_id": tg_id},
+                        {"$set": {
+                            "code": code,
+                            "username": username,
+                            "first_name": first_name,
+                            "created_at": get_current_msk_time()
+                        }},
+                        upsert=True
+                    )
+                    print(f"Code {code} saved to DB for {tg_id}", flush=True)
                 except Exception as dbe:
                     print(f"Database insert error: {dbe}", flush=True)
         except Exception as e:
@@ -157,22 +160,29 @@ def verify_code():
     
     data = request.json or {}
     code = (data.get('code') or '').strip().upper()
+    print(f"Verifying code: '{code}'", flush=True)
+    
+    if not code:
+        return jsonify({"success": False, "error": "Введите код"}), 400
+
     record = auth_codes_coll.find_one({"code": code})
     if not record:
         return jsonify({"success": False, "error": "Неверный или устаревший код"}), 400
         
-    user = users_coll.find_one({"tg_id": record["tg_id"]})
+    tg_id = record["tg_id"]
+    user = users_coll.find_one({"tg_id": tg_id})
+    
     if not user:
         users_coll.insert_one({
-            "tg_id": record["tg_id"],
-            "username": record["username"],
-            "name": record["first_name"],
+            "tg_id": tg_id,
+            "username": record.get("username", f"user_{tg_id}"),
+            "name": record.get("first_name", "User"),
             "avatar": None,
             "balance": 300,
             "last_weekly_payout": get_current_msk_time()
         })
-        return jsonify({"success": True, "token": str(record["tg_id"]), "is_new": True})
-    return jsonify({"success": True, "token": str(record["tg_id"]), "is_new": False})
+        return jsonify({"success": True, "token": str(tg_id), "is_new": True})
+    return jsonify({"success": True, "token": str(tg_id), "is_new": False})
 
 @app.route('/api/user/setup', methods=['POST'])
 def setup_profile():
@@ -181,53 +191,62 @@ def setup_profile():
     data = request.json or {}
     users_coll.update_one(
         {"tg_id": int(data['token'])},
-        {"$set": {"name": data['name'], "username": data['username'], "avatar": data['avatar']}}
+        {"$set": {"name": data.get('name'), "username": data.get('username'), "avatar": data.get('avatar')}}
     )
     return jsonify({"success": True})
 
 @app.route('/api/user/sync', methods=['GET'])
 def sync_user():
-    if users_coll is None:
-        return jsonify({"error": "DB offline"}), 500
-    token = request.args.get('token')
-    if not token:
-        return jsonify({"error": "No token"}), 400
+    try:
+        if users_coll is None:
+            return jsonify({"error": "DB offline"}), 500
+        token = request.args.get('token')
+        if not token:
+            return jsonify({"error": "No token"}), 400
+            
+        user = users_coll.find_one({"tg_id": int(token)})
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+            
+        balance = process_weekly_payout(user)
+        current_rate = get_or_create_market_rate()
         
-    user = users_coll.find_one({"tg_id": int(token)})
-    if not user:
-        return jsonify({"error": "User not found"}), 404
+        raw_txs = list(transactions_coll.find({
+            "$or": [{"sender_tg": int(token)}, {"receiver_tg": int(token)}]
+        }).sort("timestamp", -1)) if transactions_coll is not None else []
         
-    balance = process_weekly_payout(user)
-    current_rate = get_or_create_market_rate()
-    
-    raw_txs = list(transactions_coll.find({
-        "$or": [{"sender_tg": int(token)}, {"receiver_tg": int(token)}]
-    }).sort("timestamp", -1)) if transactions_coll is not None else []
-    
-    txs = []
-    for tx in raw_txs:
-        is_pos = (tx["receiver_tg"] == int(token))
-        txs.append({
-            "id": str(tx["_id"]),
-            "name": tx["sender_name"] if is_pos else tx["receiver_name"],
-            "type": "Входящий перевод" if is_pos else "Перевод",
-            "amount": f"{'+' if is_pos else '-'}{tx['amount']} ₭",
-            "isPositive": is_pos,
-            "date": tx["timestamp"].strftime('%d.%m, %H:%M') if isinstance(tx.get("timestamp"), datetime) else "Недавно"
+        txs = []
+        for tx in raw_txs:
+            is_pos = (tx.get("receiver_tg") == int(token))
+            sender_n = tx.get("sender_name") or "Пользователь"
+            recv_n = tx.get("receiver_name") or "Пользователь"
+            amt = tx.get("amount", 0)
+            ts = tx.get("timestamp")
+            
+            txs.append({
+                "id": str(tx.get("_id")),
+                "name": sender_n if is_pos else recv_n,
+                "type": "Входящий перевод" if is_pos else "Перевод",
+                "amount": f"{'+' if is_pos else '-'}{amt} ₭",
+                "isPositive": is_pos,
+                "date": ts.strftime('%d.%m, %H:%M') if isinstance(ts, datetime) else "Недавно"
+            })
+            
+        market_history = list(market_coll.find().sort("date", 1)) if market_coll is not None else []
+        return jsonify({
+            "profile": {
+                "name": user.get("name") or "Пользователь",
+                "username": user.get("username") or "username",
+                "avatar": user.get("avatar")
+            },
+            "balance": balance,
+            "rate": current_rate,
+            "transactions": txs,
+            "market_history": [{"date": str(m.get("date", ""))[-5:], "rate": float(m.get("rate", 1.0))} for m in market_history[-30:]]
         })
-        
-    market_history = list(market_coll.find().sort("date", 1)) if market_coll is not None else []
-    return jsonify({
-        "profile": {
-            "name": user.get("name", "Пользователь"),
-            "username": user.get("username", "username"),
-            "avatar": user.get("avatar")
-        },
-        "balance": balance,
-        "rate": current_rate,
-        "transactions": txs,
-        "market_history": [{"date": m["date"][-5:], "rate": m["rate"]} for m in market_history[-30:]]
-    })
+    except Exception as e:
+        print(f"Error in sync_user: {e}", flush=True)
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/transfer', methods=['POST'])
 def transfer():
