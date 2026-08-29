@@ -12,14 +12,6 @@ interface TransferScreenProps {
   currentBgImage: string;
 }
 
-const hexToRgba = (hex: string, alpha: number) => {
-  const clean = hex.replace('#', '');
-  const r = parseInt(clean.substring(0, 2), 16);
-  const g = parseInt(clean.substring(2, 4), 16);
-  const b = parseInt(clean.substring(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-};
-
 const BarcodePattern: React.FC = () => {
   const bars = [
     2, 1, 3, 1, 1, 2, 4, 1, 2, 1, 3, 2, 1, 1, 4, 2, 1, 3, 1, 2,
@@ -32,7 +24,7 @@ const BarcodePattern: React.FC = () => {
       {bars.map((width, idx) => (
         <div
           key={idx}
-          className="h-full bg-black flex-shrink-0"
+          className="h-full bg-black dark:bg-white flex-shrink-0"
           style={{ width: `${width}px` }}
         />
       ))}
@@ -49,7 +41,6 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
   currentBgImage,
 }) => {
   const tilt = useOrientation(22);
-  const [isLoading, setIsLoading] = useState(true);
   const [amount, setAmount] = useState('');
   const [recipient, setRecipient] = useState('');
   const [errorText, setErrorText] = useState<string | null>(null);
@@ -58,7 +49,6 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
 
   useEffect(() => {
     if (isActive) {
-      setIsLoading(true);
       const now = new Date();
       const day = String(now.getDate()).padStart(2, '0');
       const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -73,27 +63,19 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
         time: `${hours}:${minutes}`,
       });
 
-      const loadTimer = setTimeout(() => {
-        setIsLoading(false);
-      }, 320);
-
       const focusTimer = setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus();
         }
-      }, 480);
+      }, 460);
 
-      return () => {
-        clearTimeout(loadTimer);
-        clearTimeout(focusTimer);
-      };
+      return () => clearTimeout(focusTimer);
     } else {
       inputRef.current?.blur();
       const clearTimer = setTimeout(() => {
         setAmount('');
         setRecipient('');
         setErrorText(null);
-        setIsLoading(true);
       }, 400);
       return () => clearTimeout(clearTimer);
     }
@@ -167,146 +149,124 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
           </JellyButton>
         </div>
 
-        <div className="w-full max-w-[340px] flex flex-col items-center mt-1 mb-auto min-h-[360px] justify-center">
-          {isLoading ? (
-            <div className="w-full flex flex-col items-center animate-pulse transition-opacity duration-300">
-              <div className="w-full bg-white/70 backdrop-blur-md rounded-t-[24px] shadow-2xl p-5 flex flex-col items-center">
-                <div className="w-10 h-10 rounded-full bg-black/10 mb-2" />
-                <div className="w-32 h-4 rounded-full bg-black/10 mb-1.5" />
-                <div className="w-44 h-3 rounded-full bg-black/10 mb-4" />
-                <div className="w-full h-[0.5px] bg-black/10 mb-4" />
-                <div className="w-full h-11 rounded-full bg-black/10 mb-3" />
-                <div className="w-full h-11 rounded-full bg-black/10 mb-4" />
-                <div className="w-full h-[0.5px] bg-black/10 mb-3" />
-                <div className="w-full h-8 rounded-lg bg-black/10" />
+        <div className="w-full max-w-[340px] flex flex-col items-center mt-1 mb-auto">
+          <div className="relative w-full bg-[#FFFFFF] dark:bg-[#1C1C1E] rounded-t-[24px] shadow-2xl p-5 flex flex-col">
+            <div className="flex flex-col items-center border-b border-dashed border-black/20 dark:border-white/20 pb-3 mb-3">
+              <div className="w-10 h-10 rounded-full bg-[#E33125] flex items-center justify-center mb-1.5 shadow-sm p-2">
+                <img
+                  src="/logo.png"
+                  alt="Logo"
+                  className="w-full h-full object-contain brightness-0 invert pointer-events-none"
+                />
               </div>
-              <div
-                className="w-full h-3.5 bg-white/70 backdrop-blur-md shadow-2xl"
-                style={{
-                  clipPath:
-                    'polygon(0% 0%, 4% 100%, 8% 0%, 12% 100%, 16% 0%, 20% 100%, 24% 0%, 28% 100%, 32% 0%, 36% 100%, 40% 0%, 44% 100%, 48% 0%, 52% 100%, 56% 0%, 60% 100%, 64% 0%, 68% 100%, 72% 0%, 76% 100%, 80% 0%, 84% 100%, 88% 0%, 92% 100%, 96% 0%, 100% 100%, 100% 0%)',
-                }}
-              />
+              <span className="text-black dark:text-white text-[17px] font-bold tracking-tight uppercase">KUMPEL BANK</span>
+              <span className="text-[11px] font-semibold tracking-widest text-[#8E8E93] uppercase">
+                Электронный чек №{receiptMeta.number}
+              </span>
+              <div className="flex gap-3 text-[11px] text-[#8E8E93] mt-1 font-medium">
+                <span>{receiptMeta.date}</span>
+                <span>•</span>
+                <span>{receiptMeta.time}</span>
+              </div>
             </div>
-          ) : (
-            <div className="w-full flex flex-col items-center transition-all duration-300 animate-in fade-in">
-              <div className="relative w-full bg-[#FFFFFF] rounded-t-[24px] shadow-2xl p-5 text-black flex flex-col">
-                <div className="flex flex-col items-center border-b border-dashed border-black/20 pb-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-[#E33125] flex items-center justify-center mb-1.5 shadow-sm p-2">
-                    <img
-                      src="/logo.png"
-                      alt="Logo"
-                      className="w-full h-full object-contain brightness-0 invert pointer-events-none"
-                    />
-                  </div>
-                  <span className="text-[17px] font-bold tracking-tight uppercase">KUMPEL BANK</span>
-                  <span className="text-[11px] font-semibold tracking-widest text-[#8E8E93] uppercase">
-                    Электронный чек №{receiptMeta.number}
+
+            <div className="flex flex-col gap-3 py-1">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-col">
+                  <span className="text-black dark:text-white text-[13px] font-semibold tracking-tight leading-tight">
+                    Сумма перевода
                   </span>
-                  <div className="flex gap-3 text-[11px] text-[#8E8E93] mt-1 font-medium">
-                    <span>{receiptMeta.date}</span>
-                    <span>•</span>
-                    <span>{receiptMeta.time}</span>
-                  </div>
+                  <span className="text-[10px] text-[#8E8E93] font-medium leading-tight">
+                    от 10 до 9999₽ за один раз
+                  </span>
                 </div>
-
-                <div className="flex flex-col gap-3 py-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex flex-col">
-                      <span className="text-[13px] font-semibold text-black tracking-tight leading-tight">
-                        Сумма перевода
-                      </span>
-                      <span className="text-[10px] text-[#8E8E93] font-medium leading-tight">
-                        от 10 до 9999₽ за один раз
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-end bg-black/[0.08] border border-black/[0.12] backdrop-blur-md px-3 py-1.5 rounded-full w-[130px] shadow-inner">
-                      <input
-                        ref={inputRef}
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={amount}
-                        onChange={handleAmountChange}
-                        placeholder="0"
-                        className="w-full bg-transparent text-right font-bold text-[17px] text-black outline-none placeholder:text-black/30 caret-[#E33125]"
-                      />
-                      <span className="text-[15px] font-bold text-black ml-1 select-none pointer-events-none">
-                        ₽
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex flex-col">
-                      <span className="text-[13px] font-semibold text-black tracking-tight leading-tight">
-                        Получатель
-                      </span>
-                      <span className="text-[10px] text-[#8E8E93] font-medium leading-tight">
-                        имя получателя
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-end bg-black/[0.08] border border-black/[0.12] backdrop-blur-md px-3 py-1.5 rounded-full w-[130px] shadow-inner">
-                      <span className="text-[13px] font-semibold text-[#8E8E93] mr-0.5 select-none pointer-events-none">
-                        @
-                      </span>
-                      <input
-                        type="text"
-                        value={recipient}
-                        onChange={handleRecipientChange}
-                        placeholder="username"
-                        className="w-full bg-transparent text-left font-semibold text-[13px] text-black outline-none placeholder:text-black/30 caret-[#E33125]"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {errorText && (
-                  <p className="text-[#E33125] text-[11px] font-semibold text-center mt-2">
-                    {errorText}
-                  </p>
-                )}
-
-                <div className="border-t border-dashed border-black/20 mt-3 pt-3 flex flex-col items-center">
-                  <div className="w-full flex items-center justify-between text-[11px] text-[#8E8E93] font-medium mb-2">
-                    <span>Комиссия за перевод</span>
-                    <span className="font-semibold text-black">0 ₽ (0%)</span>
-                  </div>
-
-                  <BarcodePattern />
-
-                  <span className="text-[9px] font-mono tracking-widest text-[#8E8E93] mt-1">
-                    KMPL-{receiptMeta.number}-TX
+                <div className="flex items-center justify-end bg-black/[0.08] dark:bg-white/[0.12] border border-black/[0.12] dark:border-white/[0.12] backdrop-blur-md px-3 py-1.5 rounded-full w-[130px] shadow-inner">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={amount}
+                    onChange={handleAmountChange}
+                    placeholder="0"
+                    className="w-full bg-transparent text-right font-bold text-[17px] text-black dark:text-white outline-none placeholder:text-black/30 dark:placeholder:text-white/30 caret-[#E33125]"
+                  />
+                  <span className="text-[15px] font-bold text-black dark:text-white ml-1 select-none pointer-events-none">
+                    ₽
                   </span>
                 </div>
               </div>
 
-              <div
-                className="w-full h-3.5 bg-[#FFFFFF] shadow-2xl relative"
-                style={{
-                  clipPath:
-                    'polygon(0% 0%, 4% 100%, 8% 0%, 12% 100%, 16% 0%, 20% 100%, 24% 0%, 28% 100%, 32% 0%, 36% 100%, 40% 0%, 44% 100%, 48% 0%, 52% 100%, 56% 0%, 60% 100%, 64% 0%, 68% 100%, 72% 0%, 76% 100%, 80% 0%, 84% 100%, 88% 0%, 92% 100%, 96% 0%, 100% 100%, 100% 0%)',
-                }}
-              />
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-col">
+                  <span className="text-black dark:text-white text-[13px] font-semibold tracking-tight leading-tight">
+                    Получатель
+                  </span>
+                  <span className="text-[10px] text-[#8E8E93] font-medium leading-tight">
+                    имя получателя
+                  </span>
+                </div>
+                <div className="flex items-center justify-end bg-black/[0.08] dark:bg-white/[0.12] border border-black/[0.12] dark:border-white/[0.12] backdrop-blur-md px-3 py-1.5 rounded-full w-[130px] shadow-inner">
+                  <span className="text-[13px] font-semibold text-[#8E8E93] mr-0.5 select-none pointer-events-none">
+                    @
+                  </span>
+                  <input
+                    type="text"
+                    value={recipient}
+                    onChange={handleRecipientChange}
+                    placeholder="username"
+                    className="w-full bg-transparent text-left font-semibold text-[13px] text-black dark:text-white outline-none placeholder:text-black/30 dark:placeholder:text-white/30 caret-[#E33125]"
+                  />
+                </div>
+              </div>
             </div>
-          )}
+
+            {errorText && (
+              <p className="text-[#E33125] text-[11px] font-semibold text-center mt-2">
+                {errorText}
+              </p>
+            )}
+
+            <div className="border-t border-dashed border-black/20 dark:border-white/20 mt-3 pt-3 flex flex-col items-center">
+              <div className="w-full flex items-center justify-between text-[11px] text-[#8E8E93] font-medium mb-2">
+                <span>Комиссия за перевод</span>
+                <span className="font-semibold text-black dark:text-white">0 ₽ (0%)</span>
+              </div>
+
+              <BarcodePattern />
+
+              <span className="text-[9px] font-mono tracking-widest text-[#8E8E93] mt-1">
+                KMPL-{receiptMeta.number}-TX
+              </span>
+            </div>
+          </div>
+
+          <div
+            className="w-full h-3.5 bg-[#FFFFFF] dark:bg-[#1C1C1E] shadow-2xl relative"
+            style={{
+              clipPath:
+                'polygon(0% 0%, 4% 100%, 8% 0%, 12% 100%, 16% 0%, 20% 100%, 24% 0%, 28% 100%, 32% 0%, 36% 100%, 40% 0%, 44% 100%, 48% 0%, 52% 100%, 56% 0%, 60% 100%, 64% 0%, 68% 100%, 72% 0%, 76% 100%, 80% 0%, 84% 100%, 88% 0%, 92% 100%, 96% 0%, 100% 100%, 100% 0%)',
+            }}
+          />
         </div>
 
         <div className="w-full max-w-[340px] mt-2">
           <JellyButton
             type="button"
             onClick={handleIssueCheck}
-            flashColor="bg-white/20"
-            className="w-full h-12 rounded-full flex items-center justify-center font-semibold text-[16px] backdrop-blur-md border border-white/30 shadow-[0_8px_30px_rgba(0,0,0,0.12)] transition-all duration-300"
+            flashColor={isAmountValid() ? 'bg-black/10' : 'bg-white/10'}
+            className={`w-full h-12 rounded-full flex items-center justify-center font-semibold text-[16px] backdrop-blur-md border transition-all duration-300 ${
+              isAmountValid()
+                ? 'border-white/20 shadow-md'
+                : 'bg-black/15 border-white/[0.16] text-white/50 shadow-none'
+            }`}
             style={{
-              backgroundColor: isAmountValid()
-                ? hexToRgba(activeStyle.accentColor, 0.78)
-                : 'rgba(0, 0, 0, 0.12)',
+              backgroundColor: isAmountValid() ? activeStyle.accentColor : undefined,
               color: isAmountValid()
                 ? activeStyle.id === 'vanilla'
                   ? '#19181F'
                   : '#FFFFFF'
-                : 'rgba(255, 255, 255, 0.45)',
+                : undefined,
             }}
           >
             Выписать чек
