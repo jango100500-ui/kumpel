@@ -1,14 +1,11 @@
 import React from 'react';
 import { useOrientation } from '@/mechanics/useOrientation';
-import { CardStyle } from '@/mechanics/bankStore';
 
 interface ExchangeScreenProps {
-  activeStyle: CardStyle;
   currentBgImage: string;
 }
 
 export const ExchangeScreen: React.FC<ExchangeScreenProps> = ({
-  activeStyle,
   currentBgImage,
 }) => {
   const tilt = useOrientation(22);
