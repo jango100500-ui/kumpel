@@ -12,14 +12,14 @@ interface Transaction {
 }
 
 const mockTransactions: Transaction[] = [
-  { id: '1', name: 'Алексей', type: 'Перевод', amount: '+500 ₽', isPositive: true, date: 'Вчера, 14:20' },
-  { id: '2', name: 'Максим', type: 'Перевод', amount: '-250 ₽', isPositive: false, date: '06.08' },
-  { id: '3', name: 'Дмитрий', type: 'Перевод', amount: '+1 200 ₽', isPositive: true, date: '04.08' },
-  { id: '4', name: 'Иван', type: 'Перевод', amount: '-400 ₽', isPositive: false, date: '02.08' },
-  { id: '5', name: 'Сергей', type: 'Перевод', amount: '+2 500 ₽', isPositive: true, date: '29.07' },
-  { id: '6', name: 'Артем', type: 'Перевод', amount: '-150 ₽', isPositive: false, date: '25.07' },
-  { id: '7', name: 'Владислав', type: 'Перевод', amount: '+800 ₽', isPositive: true, date: '21.07' },
-  { id: '8', name: 'Никита', type: 'Перевод', amount: '-600 ₽', isPositive: false, date: '18.07' },
+  { id: '1', name: 'Алексей', type: 'Перевод', amount: '+500 ₭', isPositive: true, date: 'Вчера, 14:20' },
+  { id: '2', name: 'Максим', type: 'Перевод', amount: '-250 ₭', isPositive: false, date: '06.08' },
+  { id: '3', name: 'Дмитрий', type: 'Перевод', amount: '+1 200 ₭', isPositive: true, date: '04.08' },
+  { id: '4', name: 'Иван', type: 'Перевод', amount: '-400 ₭', isPositive: false, date: '02.08' },
+  { id: '5', name: 'Сергей', type: 'Перевод', amount: '+2 500 ₭', isPositive: true, date: '29.07' },
+  { id: '6', name: 'Артем', type: 'Перевод', amount: '-150 ₭', isPositive: false, date: '25.07' },
+  { id: '7', name: 'Владислав', type: 'Перевод', amount: '+800 ₭', isPositive: true, date: '21.07' },
+  { id: '8', name: 'Никита', type: 'Перевод', amount: '-600 ₭', isPositive: false, date: '18.07' },
 ];
 
 const MIN_Y = 56;
@@ -300,7 +300,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
               <div className="w-full flex justify-between items-end mt-auto">
                 <div className="flex flex-col">
                   <span className="text-[28px] font-bold tracking-tight leading-none mb-1 transition-all duration-300">
-                    {balance}₽
+                    {balance}₭
                   </span>
                   <span className="text-[15px] font-medium tracking-widest opacity-80">
                     ***5678
