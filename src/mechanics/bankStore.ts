@@ -14,6 +14,8 @@ export interface BackgroundOption {
   themeColor: string;
 }
 
+export type ThemeMode = 'light' | 'dark' | 'system';
+
 export const cardStyles: CardStyle[] = [
   { id: 'classic', name: 'Классика', bgClass: 'bg-[#E33125]', textClass: 'text-[#19181F]', accentColor: '#E33125', isDarkLogo: true },
   { id: 'honey', name: 'Медовый', bgClass: 'bg-[#E5A93C]', textClass: 'text-[#19181F]', accentColor: '#E5A93C', isDarkLogo: true },
@@ -37,6 +39,16 @@ export const getStoredBalance = (): number => {
 export const setStoredBalance = (balance: number): void => {
   if (typeof window === 'undefined') return;
   localStorage.setItem('kumpel_balance', balance.toString());
+};
+
+export const getStoredTheme = (): ThemeMode => {
+  if (typeof window === 'undefined') return 'system';
+  return (localStorage.getItem('kumpel_theme') as ThemeMode) || 'system';
+};
+
+export const setStoredTheme = (theme: ThemeMode): void => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('kumpel_theme', theme);
 };
 
 export const generateTransferLink = (amount: number): string => {
