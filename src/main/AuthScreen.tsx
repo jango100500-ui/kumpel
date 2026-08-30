@@ -42,7 +42,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onNext }) => {
   };
 
   return (
-    <div className="relative w-full h-full min-h-[100dvh] overflow-hidden flex flex-col justify-between select-none bg-transparent">
+    <div className="relative w-full h-full overflow-hidden flex flex-col justify-between select-none bg-transparent">
       <div
         className="absolute inset-[-50px] bg-cover bg-center pointer-events-none will-change-transform"
         style={{
