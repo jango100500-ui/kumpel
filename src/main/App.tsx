@@ -261,7 +261,7 @@ export const App: React.FC = () => {
   }, [successToast]);
 
   return (
-    <div className="relative w-full h-[100dvh] overflow-hidden select-none bg-[#5491D0]">
+    <div className="absolute inset-0 w-full h-full overflow-hidden select-none bg-[#5491D0]">
       <div
         className={`absolute inset-0 z-[200] bg-[#5491D0] transition-opacity duration-700 ease-in-out ${
           isAppLoading ? 'opacity-100' : 'opacity-0 pointer-events-none'
@@ -335,7 +335,7 @@ export const App: React.FC = () => {
 
       <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10" style={getScreenStyle('mainFlow')}>
         <div
-          className="absolute top-[-50px] left-[-50px] right-[-50px] bottom-[-50px] bg-cover bg-center pointer-events-none transition-opacity duration-200"
+          className="absolute inset-[-50px] bg-cover bg-center pointer-events-none transition-opacity duration-200"
           style={{
             backgroundImage: `url(${activeBg.image})`,
             transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.12)`,
