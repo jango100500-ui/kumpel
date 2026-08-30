@@ -86,9 +86,9 @@ export const AuthCodeScreen: React.FC<AuthCodeScreenProps> = ({ isActive, onBack
   const isComplete = code.every((char) => char.length === 1);
 
   return (
-    <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col justify-between select-none bg-transparent">
+    <div className="relative w-full h-full overflow-hidden flex flex-col justify-between select-none bg-transparent">
       <div
-        className="absolute top-0 left-[-50px] right-[-50px] bottom-0 bg-cover bg-center pointer-events-none will-change-transform transition-opacity duration-200"
+        className="absolute inset-[-50px] bg-cover bg-center pointer-events-none will-change-transform"
         style={{
           backgroundImage: 'url(/question1.png)',
           transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.12)`,
@@ -134,7 +134,7 @@ export const AuthCodeScreen: React.FC<AuthCodeScreenProps> = ({ isActive, onBack
           </div>
 
           <p className="text-white/70 text-[13px] font-medium leading-relaxed px-2">
-            Проверьте уведомления. Если пуш-уведомление не пришло, возможно, вы запретили их отправку в браузере.
+            Проверьте уведомления. Код активен в течение 2 минут.
           </p>
         </div>
 
