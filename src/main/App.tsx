@@ -328,7 +328,9 @@ export const App: React.FC = () => {
       </div>
 
       <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10" style={getScreenStyle('onboarding')}>
-        <OnboardingScreen onComplete={handleOnboardingComplete} />
+        <OnboardingScreen
+          onComplete={handleOnboardingComplete}
+        />
       </div>
 
       <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10" style={getScreenStyle('mainFlow')}>
@@ -365,6 +367,7 @@ export const App: React.FC = () => {
         <div className="absolute inset-0 w-full h-full will-change-transform z-10" style={getTabStyle('exchange')}>
           <ExchangeScreen
             marketData={marketData}
+            currentBgImage={activeBg.image}
           />
         </div>
       </div>
@@ -379,6 +382,7 @@ export const App: React.FC = () => {
           }}
           activeStyle={activeStyle}
           balance={balance}
+          currentBgImage={activeBg.image}
           token={token}
         />
       </div>
@@ -388,6 +392,7 @@ export const App: React.FC = () => {
           isActive={currentScreen === 'request'}
           onBack={() => setCurrentScreen(activeTab)}
           activeStyle={activeStyle}
+          currentBgImage={activeBg.image}
           token={token}
         />
       </div>
