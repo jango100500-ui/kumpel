@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useLocalization } from '@/mechanics/localization';
-import { useOrientation } from '@/mechanics/useOrientation';
 import { JellyButton } from '@/uis/JellyButton';
 import { api } from '@/mechanics/api';
 
@@ -10,7 +9,6 @@ interface AuthScreenProps {
 
 export const AuthScreen: React.FC<AuthScreenProps> = ({ onNext }) => {
   const loc = useLocalization();
-  const tilt = useOrientation(22);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
@@ -42,18 +40,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onNext }) => {
   };
 
   return (
-    <div className="relative w-full h-full min-h-[100dvh] overflow-hidden flex flex-col justify-between select-none bg-transparent">
-      <div
-        className="absolute inset-[-100px] bg-cover bg-center pointer-events-none will-change-transform"
-        style={{
-          backgroundImage: 'url(/background.png)',
-          transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.25)`,
-        }}
-      />
-
+    <div className="relative w-full h-full overflow-hidden flex flex-col justify-between select-none bg-transparent">
+      
       <div className="relative z-10 flex-1" />
 
-      <div className="relative z-10 w-full px-7 pb-10 flex flex-col items-center">
+      <div 
+        className="relative z-10 w-full px-7 pb-10 flex flex-col items-center"
+      >
         <div className="w-full max-w-[320px] flex flex-col items-center text-center">
           <h1 className="text-white text-[24px] font-semibold tracking-tight leading-tight">
             {loc.welcomeTitle}
