@@ -5,74 +5,86 @@ const supabaseKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '';
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
-const getMskDate = (): Date => {
-  const d = new Date();
-  const utc = d.getTime() + d.getTimezoneOffset() * 60000;
-  return new Date(utc + 3600000 * 3);
-};
-
 export const api = {
   requestAuthCode: async (): Promise<string> => {
-    const code = Math.random().toString().slice(2, 8).toUpperCase();
-    await supabase.from('auth_codes').insert({
-      code,
-      created_at: getMskDate().toISOString(),
-    });
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const { error } = await supabase.from('auth_codes').insert({ code });
+    if (error) {
+      throw new Error(`Ошибка записи в базу: ${error.message}`);
+    }
     return code;
   },
 
   verifyAuth: async (code: string): Promise<{ success: boolean; error?: string }> => {
-    const { data } = await supabase.from('auth_codes').select('*').eq('code', code).single();
-    if (!data) return { success: false, error: 'Неверный код' };
+    const cleanCode = code.trim().toUpperCase();
+    const { data, error } = await supabase
+      .from('auth_codes')
+      .select('*')
+      .eq('code', cleanCode)
+      .order('created_at', { ascending: false })
+      .limit(1);
 
-    const created = new Date(data.created_at).getTime();
-    const now = getMskDate().getTime();
-    if (now - created > 2 * 60000) {
+    if (error) {
+      return { success: false, error: `Ошибка базы данных: ${error.message}` };
+    }
+
+    if (!data || data.length === 0) {
+      return { success: false, error: 'Неверный код' };
+    }
+
+    const record = data[0];
+    const createdTime = new Date(record.created_at).getTime();
+    const nowTime = Date.now();
+
+    if (nowTime - createdTime > 2 * 60 * 1000) {
       return { success: false, error: 'Код истек (прошло больше 2 минут)' };
     }
+
     return { success: true };
   },
 
   setupUser: async (payload: { token: string; name: string; username: string; avatar: string | null }): Promise<{ success: boolean }> => {
-    const { error } = await supabase.from('users').insert({
+    const { error } = await supabase.from('users').upsert({
       token: payload.token,
       name: payload.name,
-      username: payload.username,
+      username: payload.username.replace('@', '').toLowerCase(),
       avatar: payload.avatar,
       balance: 300,
-      last_weekly_payout: getMskDate().toISOString(),
     });
     if (error) throw error;
     return { success: true };
   },
 
   syncUser: async (token: string): Promise<any> => {
-    const { data: user } = await supabase.from('users').select('*').eq('token', token).single();
-    if (!user) return { error: 'Not found' };
+    const { data: user, error: userError } = await supabase.from('users').select('*').eq('token', token).single();
+    if (userError || !user) return { error: 'User not found' };
 
-    const now = getMskDate();
-    const day = now.getDay();
+    const now = new Date();
+    const utcTime = now.getTime() + now.getTimezoneOffset() * 60000;
+    const nowMsk = new Date(utcTime + 3 * 3600000);
+    
+    const day = nowMsk.getDay();
     const diff = day === 0 ? 6 : day - 1;
-    const lastMonday = new Date(now);
-    lastMonday.setDate(now.getDate() - diff);
+    const lastMonday = new Date(nowMsk);
+    lastMonday.setDate(nowMsk.getDate() - diff);
     lastMonday.setHours(0, 0, 0, 0);
 
     let balance = user.balance;
     const lastPayout = new Date(user.last_weekly_payout);
     if (lastPayout < lastMonday) {
       balance = Math.min(2000, balance + 150);
-      await supabase.from('users').update({ balance, last_weekly_payout: now.toISOString() }).eq('token', token);
+      await supabase.from('users').update({ balance, last_weekly_payout: new Date().toISOString() }).eq('token', token);
     }
 
     let rate = 1.0;
     const { data: marketData } = await supabase.from('market_history').select('*').order('date', { ascending: false }).limit(30);
-    const todayStr = now.toISOString().split('T')[0];
+    const todayStr = nowMsk.toISOString().split('T')[0];
 
     if (!marketData || marketData.length === 0) {
       let r = 1.0;
       for (let i = 30; i >= 0; i--) {
-        const d = new Date(now);
-        d.setDate(now.getDate() - i);
+        const d = new Date(nowMsk);
+        d.setDate(nowMsk.getDate() - i);
         r = Math.max(0.6, Math.min(1.8, r * (1 + (Math.random() * 0.18 - 0.08))));
         await supabase.from('market_history').insert({ date: d.toISOString().split('T')[0], rate: parseFloat(r.toFixed(2)) });
       }
@@ -89,7 +101,7 @@ export const api = {
       }
     }
 
-    const finalMarket = await supabase.from('market_history').select('*').order('date', { ascending: true }).limit(30);
+    const { data: historyList } = await supabase.from('market_history').select('*').order('date', { ascending: true }).limit(30);
     const { data: txs } = await supabase.from('transactions').select('*').or(`sender_token.eq.${token},receiver_token.eq.${token}`).order('timestamp', { ascending: false }).limit(30);
 
     const formattedTxs = (txs || []).map((tx: any) => {
@@ -108,14 +120,15 @@ export const api = {
       profile: { name: user.name, username: user.username, avatar: user.avatar },
       balance,
       rate,
-      market_history: (finalMarket.data || []).map((m: any) => ({ date: m.date.slice(-5), rate: m.rate })),
+      market_history: (historyList || []).map((m: any) => ({ date: m.date.slice(-5), rate: m.rate })),
       transactions: formattedTxs,
     };
   },
 
   transfer: async ({ token, recipient, amount }: { token: string; recipient: string; amount: number }): Promise<{ success: boolean; error?: string }> => {
+    const cleanRecip = recipient.replace('@', '').trim().toLowerCase();
     const { data: sender } = await supabase.from('users').select('*').eq('token', token).single();
-    const { data: receiver } = await supabase.from('users').select('*').ilike('username', recipient).single();
+    const { data: receiver } = await supabase.from('users').select('*').ilike('username', cleanRecip).single();
 
     if (!receiver) return { success: false, error: 'Пользователь не найден' };
     if (receiver.token === token) return { success: false, error: 'Нельзя перевести себе' };
@@ -134,7 +147,6 @@ export const api = {
       receiver_token: receiver.token,
       receiver_name: receiver.name,
       amount,
-      timestamp: getMskDate().toISOString(),
     });
 
     return { success: true };
@@ -142,13 +154,13 @@ export const api = {
 
   createQR: async ({ token, amount }: { token: string; amount: number }): Promise<{ success: boolean; qr_token?: string }> => {
     const qr_token = Math.random().toString(36).substring(2, 14);
-    await supabase.from('qr_codes').insert({
+    const { error } = await supabase.from('qr_codes').insert({
       token: qr_token,
       creator_token: token,
       amount,
       claimed: false,
-      created_at: getMskDate().toISOString(),
     });
+    if (error) throw error;
     return { success: true, qr_token };
   },
 
@@ -179,7 +191,6 @@ export const api = {
       receiver_token: receiver.token,
       receiver_name: receiver.name,
       amount: qr.amount,
-      timestamp: getMskDate().toISOString(),
     });
 
     return { success: true };
