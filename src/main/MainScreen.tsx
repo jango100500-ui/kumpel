@@ -1,5 +1,4 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { useOrientation } from '@/mechanics/useOrientation';
 import { JellyButton } from '@/uis/JellyButton';
 import { cardStyles, backgroundOptions, ThemeMode } from '@/mechanics/bankStore';
 
@@ -80,8 +79,6 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   setIsEditMode,
   profile,
 }) => {
-  const tilt = useOrientation(22);
-
   const sheetRef = useRef<HTMLDivElement>(null);
   const topContentRef = useRef<HTMLDivElement>(null);
   const historyListRef = useRef<HTMLDivElement>(null);
@@ -101,22 +98,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   const [tempBgId, setTempBgId] = useState(savedBgId);
   const [tempTheme, setTempTheme] = useState<ThemeMode>(savedTheme);
 
-  const [currentBgImage, setCurrentBgImage] = useState('/background2.png');
-  const [bgOpacity, setBgOpacity] = useState(1);
-
   const activeStyle = cardStyles.find((s) => s.id === (isEditMode ? tempStyleId : savedStyleId)) || cardStyles[0];
-  const activeBg = backgroundOptions.find((b) => b.id === (isEditMode ? tempBgId : savedBgId)) || backgroundOptions[0];
-
-  useEffect(() => {
-    if (activeBg.image !== currentBgImage) {
-      setBgOpacity(0);
-      const timeout = setTimeout(() => {
-        setCurrentBgImage(activeBg.image);
-        setBgOpacity(1);
-      }, 160);
-      return () => clearTimeout(timeout);
-    }
-  }, [activeBg.image, currentBgImage]);
 
   useEffect(() => {
     const updateTimer = () => {
@@ -156,7 +138,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
     if (!sheetRef.current || !topContentRef.current) return;
 
     if (isEditMode) {
-      sheetRef.current.style.transform = `translate3d(0, 100%, 0)`;
+      sheetRef.current.style.transform = `translate3d(0, 100dvh, 0)`;
       sheetRef.current.style.transition = 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)';
     } else {
       sheetRef.current.style.transform = `translate3d(0, ${y - 56}px, 0)`;
@@ -265,19 +247,11 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   const displayName = profile.name.length > 7 ? profile.name.slice(0, 7) + '…' : profile.name;
 
   return (
-    <div className="relative w-full h-full overflow-hidden flex flex-col select-none bg-transparent">
-      <div
-        className="absolute inset-[-60px] bg-cover bg-center pointer-events-none will-change-transform transition-opacity duration-200 ease-in-out"
-        style={{
-          backgroundImage: `url(${currentBgImage})`,
-          opacity: bgOpacity,
-          transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.15)`,
-        }}
-      />
+    <div className="relative w-full h-[100dvh] overflow-hidden flex flex-col select-none bg-transparent">
 
       <div
         ref={topContentRef}
-        className="relative z-10 w-full px-5 pt-[calc(env(safe-area-inset-top,16px)+6px)] pb-3 flex flex-col items-center flex-shrink-0 origin-top will-change-transform"
+        className="relative z-10 w-full px-5 pt-3 pb-3 flex flex-col items-center flex-shrink-0 origin-top will-change-transform"
       >
         <div className="w-full max-w-[340px] flex justify-between items-center mb-2.5">
           <div className="h-11 px-2.5 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center gap-2.5 shadow-sm">
@@ -431,7 +405,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
         className="absolute inset-x-0 z-20 bg-white/75 dark:bg-[#1C1C1E]/75 backdrop-blur-[24px] border-t border-white/40 dark:border-white/10 rounded-t-[36px] flex flex-col items-center shadow-[-0px_-10px_35px_rgba(0,0,0,0.15)] will-change-transform"
         style={{
           top: `56px`,
-          height: `calc(100% - 56px)`,
+          height: `100dvh`,
         }}
       >
         <div
@@ -449,7 +423,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
 
         <div
           ref={historyListRef}
-          className="w-full max-w-[340px] px-2 pb-[120px] flex-1 overflow-y-auto scroll-y-touch touch-pan-y flex flex-col gap-2.5"
+          className="w-full max-w-[340px] px-2 overflow-y-auto scroll-y-touch touch-pan-y flex flex-col gap-2.5"
         >
           {transactions.length === 0 ? (
             <div className="w-full flex-1 flex items-center justify-center py-10 text-center">
@@ -499,8 +473,8 @@ export const MainScreen: React.FC<MainScreenProps> = ({
         className="absolute inset-x-0 z-30 bg-white/75 dark:bg-[#1C1C1E]/75 backdrop-blur-[24px] border-t border-white/40 dark:border-white/10 rounded-t-[36px] flex flex-col items-center shadow-[-0px_-10px_35px_rgba(0,0,0,0.15)] will-change-transform"
         style={{
           top: `380px`,
-          height: `calc(100% - 380px)`,
-          transform: `translate3d(0, ${isEditMode ? '0' : '100%'}, 0)`,
+          height: `100dvh`,
+          transform: `translate3d(0, ${isEditMode ? '0' : '100dvh'}, 0)`,
           transition: 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)',
         }}
       >
