@@ -8,6 +8,7 @@ import { TransferScreen } from './TransferScreen';
 import { RequestScreen } from './RequestScreen';
 import { TabBar } from '@/uis/TabBar';
 import { api } from '@/mechanics/api';
+import { useOrientation } from '@/mechanics/useOrientation';
 import {
   cardStyles,
   backgroundOptions,
@@ -35,11 +36,6 @@ export const App: React.FC = () => {
     name: 'Kumpel',
     username: 'user',
     avatar: null,
-  });
-
-  const [initialData, setInitialData] = useState<{ name: string; username: string }>({
-    name: '',
-    username: '',
   });
 
   const [balance, setBalance] = useState(0);
@@ -72,6 +68,7 @@ export const App: React.FC = () => {
 
   const activeStyle = cardStyles.find((s) => s.id === savedStyleId) || cardStyles[0];
   const activeBg = backgroundOptions.find((b) => b.id === savedBgId) || backgroundOptions[0];
+  const tilt = useOrientation(22);
 
   const loadData = async (userToken: string) => {
     try {
@@ -333,8 +330,6 @@ export const App: React.FC = () => {
 
       <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10" style={getScreenStyle('onboarding')}>
         <OnboardingScreen
-          initialName={initialData.name}
-          initialUsername={initialData.username}
           onComplete={handleOnboardingComplete}
         />
       </div>
