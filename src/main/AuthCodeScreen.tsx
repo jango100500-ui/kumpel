@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useOrientation } from '@/mechanics/useOrientation';
 import { JellyButton } from '@/uis/JellyButton';
 
 interface AuthCodeScreenProps {
@@ -9,7 +8,6 @@ interface AuthCodeScreenProps {
 }
 
 export const AuthCodeScreen: React.FC<AuthCodeScreenProps> = ({ isActive, onBack, onVerify }) => {
-  const tilt = useOrientation(22);
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -86,16 +84,12 @@ export const AuthCodeScreen: React.FC<AuthCodeScreenProps> = ({ isActive, onBack
   const isComplete = code.every((char) => char.length === 1);
 
   return (
-    <div className="relative w-full h-full min-h-[100dvh] overflow-hidden flex flex-col justify-between select-none bg-transparent">
-      <div
-        className="absolute inset-[-100px] bg-cover bg-center pointer-events-none will-change-transform"
-        style={{
-          backgroundImage: 'url(/question1.png)',
-          transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.25)`,
-        }}
-      />
-
-      <div className="relative z-10 w-full px-5 pt-3 pb-8 flex flex-col items-center justify-between flex-1 overflow-y-auto scroll-y-touch">
+    <div className="relative w-full h-full overflow-hidden flex flex-col justify-between select-none bg-transparent">
+      
+      <div 
+        className="relative z-10 w-full px-5 pb-8 flex flex-col items-center justify-between flex-1 overflow-y-auto scroll-y-touch"
+        style={{ paddingTop: 'max(env(safe-area-inset-top), 48px)' }}
+      >
         <div className="w-full flex justify-between items-center mb-6">
           <JellyButton
             type="button"
