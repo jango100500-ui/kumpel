@@ -38,11 +38,6 @@ export const App: React.FC = () => {
     avatar: null,
   });
 
-  const [initialData, setInitialData] = useState<{ name: string; username: string }>({
-    name: '',
-    username: '',
-  });
-
   const [balance, setBalance] = useState(0);
   const [marketData, setMarketData] = useState<{
     rate: number;
@@ -334,8 +329,6 @@ export const App: React.FC = () => {
 
       <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10" style={getScreenStyle('onboarding')}>
         <OnboardingScreen
-          initialName={initialData.name}
-          initialUsername={initialData.username}
           onComplete={handleOnboardingComplete}
         />
       </div>
