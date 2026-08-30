@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AuthScreen } from './AuthScreen';
 import { AuthCodeScreen } from './AuthCodeScreen';
 import { OnboardingScreen } from './OnboardingScreen';
@@ -56,6 +56,7 @@ export const App: React.FC = () => {
     date: string;
   }>>([]);
 
+  const lastTxId = useRef<string | null>(null);
   const [savedTheme, setSavedTheme] = useState<ThemeMode>(getStoredTheme());
   const [previewTheme, setPreviewTheme] = useState<ThemeMode | null>(null);
 
@@ -70,35 +71,50 @@ export const App: React.FC = () => {
   const activeBg = backgroundOptions.find((b) => b.id === savedBgId) || backgroundOptions[0];
   const tilt = useOrientation(22);
 
-  const loadData = async (userToken: string) => {
+  const loadData = async (userToken: string, isSilent = false) => {
     try {
       const res = await api.syncUser(userToken);
-      if (res && !res.error && res.profile) {
-        setProfile(res.profile);
-        setBalance(res.balance || 0);
+      if (!res.error) {
+        setProfile(res.profile!);
+        setBalance(res.balance!);
         setMarketData({
-          rate: res.rate || 1.0,
-          history: res.market_history || [],
+          rate: res.rate!,
+          history: res.market_history!,
         });
-        setTransactions(res.transactions || []);
-        setCurrentScreen('main');
+
+        if (res.transactions && res.transactions.length > 0) {
+          const latest = res.transactions[0];
+          if (isSilent && lastTxId.current && lastTxId.current !== latest.id && latest.isPositive) {
+            sendNotification(`Вам переведено ${latest.amount} от ${latest.name}!`);
+          }
+          lastTxId.current = latest.id;
+        }
+
+        setTransactions(res.transactions!);
+        if (!isSilent) setCurrentScreen(activeTab);
       } else {
-        setCurrentScreen('auth');
+        if (!isSilent) setCurrentScreen('auth');
       }
     } catch {
-      setCurrentScreen('auth');
+      if (!isSilent) setCurrentScreen('auth');
     } finally {
-      setIsAppLoading(false);
+      if (!isSilent) setIsAppLoading(false);
     }
   };
 
   useEffect(() => {
     if (token) {
       loadData(token);
+      const interval = setInterval(() => {
+        loadData(token, true);
+      }, 3500);
+      return () => clearInterval(interval);
     } else {
       setIsAppLoading(false);
     }
+  }, [token]);
 
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const payToken = params.get('pay');
     if (payToken) {
@@ -116,7 +132,7 @@ export const App: React.FC = () => {
         }
       }).catch(() => {});
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
     const activeTheme = previewTheme || savedTheme;
@@ -151,7 +167,6 @@ export const App: React.FC = () => {
           new Notification('Kumpel Bank', {
             body: message,
             icon: '/logo.png',
-            badge: '/logo.png',
           });
         } catch {}
       }
@@ -230,14 +245,13 @@ export const App: React.FC = () => {
     const cur = order[flowScreen as keyof typeof order];
     const ths = order[screenName as keyof typeof order];
     const isActive = flowScreen === screenName;
-    const isAdjacent = Math.abs(cur - ths) <= 1;
 
     return {
-      transform: `translateX(${ths < cur ? '-100%' : ths > cur ? '100%' : '0%'})`,
+      transform: `translateX(${ths < cur ? '-30%' : ths > cur ? '100%' : '0%'})`,
       transition: 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)',
       pointerEvents: isActive ? 'auto' : 'none',
-      display: isAdjacent ? 'block' : 'none',
       zIndex: ths * 10,
+      opacity: isActive || Math.abs(cur - ths) <= 1 ? 1 : 0, 
     };
   };
 
@@ -261,7 +275,7 @@ export const App: React.FC = () => {
   }, [successToast]);
 
   return (
-    <div className="relative w-full h-full min-h-[100dvh] overflow-hidden select-none bg-[#5491D0]">
+    <div className="relative w-full h-[100dvh] overflow-hidden select-none bg-[#5491D0]">
       <div
         className={`absolute inset-0 z-[200] bg-[#5491D0] transition-opacity duration-700 ease-in-out ${
           isAppLoading ? 'opacity-100' : 'opacity-0 pointer-events-none'
@@ -269,7 +283,7 @@ export const App: React.FC = () => {
       />
 
       {successToast && (
-        <div className="absolute top-5 inset-x-0 z-[60] flex justify-center px-4 animate-in fade-in slide-in-from-top-4 duration-300 pointer-events-none">
+        <div className="absolute top-[calc(max(env(safe-area-inset-top),48px)+8px)] inset-x-0 z-[60] flex justify-center px-4 animate-in fade-in slide-in-from-top-4 duration-300 pointer-events-none">
           <div className="w-full max-w-[340px] bg-white/90 dark:bg-[#1C1C1E]/90 border border-black/10 dark:border-white/10 backdrop-blur-xl rounded-[20px] p-4 shadow-xl flex items-center gap-3 pointer-events-auto">
             <div className="w-9 h-9 rounded-full bg-[#34C759] flex items-center justify-center shadow-sm flex-shrink-0">
               <svg className="w-5 h-5 text-white stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -284,7 +298,7 @@ export const App: React.FC = () => {
       )}
 
       {qrToPay && (
-        <div className="absolute inset-0 z-[70] bg-black/50 backdrop-blur-md flex items-center justify-center px-5 animate-in fade-in duration-200">
+        <div className="absolute inset-0 z-[70] bg-black/50 backdrop-blur-md flex items-center justify-center px-5 animate-in fade-in duration-200 pointer-events-auto">
           <div className="w-full max-w-[320px] bg-white dark:bg-[#1C1C1E] border border-black/5 dark:border-white/10 rounded-[28px] p-6 flex flex-col items-center text-center shadow-2xl">
             <div className="w-14 h-14 bg-[#E33125] rounded-full flex items-center justify-center mb-3 shadow-md">
               <img src="/logo.png" alt="Logo" className="w-7 h-7 object-contain brightness-0 invert" />
@@ -315,11 +329,11 @@ export const App: React.FC = () => {
         </div>
       )}
 
-      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10" style={getScreenStyle('auth')}>
+      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform" style={getScreenStyle('auth')}>
         <AuthScreen onNext={() => setCurrentScreen('auth_code')} />
       </div>
 
-      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-20" style={getScreenStyle('auth_code')}>
+      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform" style={getScreenStyle('auth_code')}>
         <AuthCodeScreen
           isActive={currentScreen === 'auth_code'}
           onBack={() => setCurrentScreen('auth')}
@@ -327,13 +341,13 @@ export const App: React.FC = () => {
         />
       </div>
 
-      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10" style={getScreenStyle('onboarding')}>
+      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform" style={getScreenStyle('onboarding')}>
         <OnboardingScreen
           onComplete={handleOnboardingComplete}
         />
       </div>
 
-      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10" style={getScreenStyle('mainFlow')}>
+      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform" style={getScreenStyle('mainFlow')}>
         <div
           className="absolute inset-[-100px] bg-cover bg-center pointer-events-none transition-opacity duration-200"
           style={{
@@ -342,7 +356,7 @@ export const App: React.FC = () => {
           }}
         />
 
-        <div className="absolute inset-0 w-full h-full will-change-transform z-10" style={getTabStyle('main')}>
+        <div className="absolute inset-0 w-full h-full will-change-transform" style={getTabStyle('main')}>
           <MainScreen
             onOpenTransfer={() => setCurrentScreen('transfer')}
             onOpenRequest={() => setCurrentScreen('request')}
@@ -364,15 +378,14 @@ export const App: React.FC = () => {
           />
         </div>
 
-        <div className="absolute inset-0 w-full h-full will-change-transform z-10" style={getTabStyle('exchange')}>
+        <div className="absolute inset-0 w-full h-full will-change-transform" style={getTabStyle('exchange')}>
           <ExchangeScreen
             marketData={marketData}
-            currentBgImage={activeBg.image}
           />
         </div>
       </div>
 
-      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-[40]" style={getScreenStyle('transfer')}>
+      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform" style={getScreenStyle('transfer')}>
         <TransferScreen
           isActive={currentScreen === 'transfer'}
           onBack={() => setCurrentScreen(activeTab)}
@@ -382,17 +395,15 @@ export const App: React.FC = () => {
           }}
           activeStyle={activeStyle}
           balance={balance}
-          currentBgImage={activeBg.image}
           token={token}
         />
       </div>
 
-      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-[40]" style={getScreenStyle('request')}>
+      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform" style={getScreenStyle('request')}>
         <RequestScreen
           isActive={currentScreen === 'request'}
           onBack={() => setCurrentScreen(activeTab)}
           activeStyle={activeStyle}
-          currentBgImage={activeBg.image}
           token={token}
         />
       </div>
@@ -404,14 +415,14 @@ export const App: React.FC = () => {
         }}
       >
         <div
-          className="absolute bottom-0 inset-x-0 h-[120px] backdrop-blur-[16px] -z-10 transition-opacity duration-500"
+          className="absolute bottom-0 inset-x-0 h-[140px] backdrop-blur-[16px] -z-10 transition-opacity duration-500"
           style={{
             WebkitMaskImage: 'linear-gradient(to top, black 50%, transparent 100%)',
             maskImage: 'linear-gradient(to top, black 50%, transparent 100%)',
             opacity: isTabBarVisible ? 1 : 0,
           }}
         />
-        <div className="w-full pb-6 pt-10 pointer-events-auto">
+        <div className="w-full pb-[calc(env(safe-area-inset-bottom,16px)+10px)] pt-6 pointer-events-auto">
           <TabBar activeTab={activeTab} onChange={(tab) => { setActiveTab(tab); setCurrentScreen(tab); }} />
         </div>
       </div>
