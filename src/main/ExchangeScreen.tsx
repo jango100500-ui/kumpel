@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useOrientation } from '@/mechanics/useOrientation';
 
 interface ExchangeScreenProps {
   currentBgImage: string;
@@ -139,7 +140,8 @@ const TimeframeSelector: React.FC<{ activeTab: number; onChange: (i: number) => 
   );
 };
 
-export const ExchangeScreen: React.FC<ExchangeScreenProps> = ({ marketData }) => {
+export const ExchangeScreen: React.FC<ExchangeScreenProps> = ({ currentBgImage, marketData }) => {
+  const tilt = useOrientation(22);
   const [selectedTf, setSelectedTf] = useState(4);
 
   const currentRate = marketData.rate || 1.0;
@@ -185,9 +187,16 @@ export const ExchangeScreen: React.FC<ExchangeScreenProps> = ({ marketData }) =>
   };
 
   return (
-    <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col select-none bg-transparent">
+    <div className="relative w-full h-full min-h-[100dvh] overflow-hidden flex flex-col select-none bg-transparent">
+      <div
+        className="absolute inset-[-100px] bg-cover bg-center pointer-events-none will-change-transform"
+        style={{
+          backgroundImage: `url(${currentBgImage})`,
+          transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.25)`,
+        }}
+      />
+
       <div className="relative z-10 w-full h-full flex flex-col items-center px-5 pt-[66px] pb-[110px]">
-        
         <div className="flex-shrink-0 w-full max-w-[340px] bg-white/75 dark:bg-[#1C1C1E]/75 backdrop-blur-[24px] rounded-[24px] shadow-lg border border-white/40 dark:border-white/10 p-4 flex justify-between items-center mb-3">
           <div className="flex flex-col flex-1">
             <span className="text-[12px] font-semibold text-[#8E8E93] mb-0.5">Курс ₭:</span>
