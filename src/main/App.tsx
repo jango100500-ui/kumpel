@@ -17,6 +17,7 @@ import {
 } from '@/mechanics/bankStore';
 
 export const App: React.FC = () => {
+  const [isAppLoading, setIsAppLoading] = useState(true);
   const [currentScreen, setCurrentScreen] = useState<'auth' | 'auth_code' | 'onboarding' | 'main' | 'exchange' | 'transfer' | 'request'>('auth');
   const [activeTab, setActiveTab] = useState<'main' | 'exchange'>('main');
 
@@ -34,6 +35,11 @@ export const App: React.FC = () => {
     name: 'Kumpel',
     username: 'user',
     avatar: null,
+  });
+
+  const [initialData, setInitialData] = useState<{ name: string; username: string }>({
+    name: '',
+    username: '',
   });
 
   const [balance, setBalance] = useState(0);
@@ -82,12 +88,18 @@ export const App: React.FC = () => {
       } else {
         setCurrentScreen('auth');
       }
-    } catch {}
+    } catch {
+      setCurrentScreen('auth');
+    } finally {
+      setIsAppLoading(false);
+    }
   };
 
   useEffect(() => {
     if (token) {
       loadData(token);
+    } else {
+      setIsAppLoading(false);
     }
 
     const params = new URLSearchParams(window.location.search);
@@ -151,6 +163,7 @@ export const App: React.FC = () => {
 
   const handleVerifyCode = async (code: string) => {
     try {
+      setIsAppLoading(true);
       const res = await api.verifyAuth(code);
       if (res.success) {
         let t = localStorage.getItem('kumpel_token');
@@ -160,19 +173,26 @@ export const App: React.FC = () => {
         }
         setToken(t);
         const syncRes = await api.syncUser(t);
-        if (syncRes.error) setCurrentScreen('onboarding');
-        else await loadData(t);
+        if (syncRes.error) {
+          setCurrentScreen('onboarding');
+          setIsAppLoading(false);
+        } else {
+          await loadData(t);
+        }
       } else {
         alert(res.error);
+        setIsAppLoading(false);
       }
     } catch {
       alert('Ошибка при проверке кода');
+      setIsAppLoading(false);
     }
   };
 
   const handleOnboardingComplete = async (data: { name: string; username: string; avatar: string | null }) => {
     if (!token) return;
     try {
+      setIsAppLoading(true);
       await api.setupUser({ token, ...data });
       setProfile(data);
       setCurrentScreen('main');
@@ -180,12 +200,14 @@ export const App: React.FC = () => {
       await loadData(token);
     } catch {
       setCurrentScreen('main');
+      setIsAppLoading(false);
     }
   };
 
   const handleConfirmPay = async () => {
     if (!qrToPay || !token) return;
     try {
+      setIsAppLoading(true);
       const res = await api.payQR({ token, qr_token: qrToPay.token });
       if (res.success) {
         sendNotification(`Счет на ${qrToPay.amount}₭ успешно оплачен!`);
@@ -194,10 +216,12 @@ export const App: React.FC = () => {
       } else {
         alert(res.error || 'Не удалось оплатить счет');
         setQrToPay(null);
+        setIsAppLoading(false);
       }
     } catch {
       alert('Ошибка при оплате счета');
       setQrToPay(null);
+      setIsAppLoading(false);
     }
   };
 
@@ -216,8 +240,6 @@ export const App: React.FC = () => {
       transition: 'transform 450ms cubic-bezier(0.32, 0.72, 0, 1)',
       pointerEvents: isActive ? 'auto' : 'none',
       display: isAdjacent ? 'block' : 'none',
-      zIndex: ths * 10,
-      boxShadow: ths > 0 ? '-16px 0 35px rgba(0,0,0,0.25)' : 'none',
     };
   };
 
@@ -242,8 +264,16 @@ export const App: React.FC = () => {
 
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden select-none bg-[#5491D0]">
+      
+      {/* Black Loading Overlay */}
+      <div
+        className={`absolute inset-0 z-[200] bg-black transition-opacity duration-700 ease-in-out ${
+          isAppLoading ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+      />
+
       {successToast && (
-        <div className="absolute top-5 inset-x-0 z-[100] flex justify-center px-4 animate-in fade-in slide-in-from-top-4 duration-300 pointer-events-none">
+        <div className="absolute top-5 inset-x-0 z-[60] flex justify-center px-4 animate-in fade-in slide-in-from-top-4 duration-300 pointer-events-none">
           <div className="w-full max-w-[340px] bg-white/90 dark:bg-[#1C1C1E]/90 border border-black/10 dark:border-white/10 backdrop-blur-xl rounded-[20px] p-4 shadow-xl flex items-center gap-3 pointer-events-auto">
             <div className="w-9 h-9 rounded-full bg-[#34C759] flex items-center justify-center shadow-sm flex-shrink-0">
               <svg className="w-5 h-5 text-white stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -258,7 +288,7 @@ export const App: React.FC = () => {
       )}
 
       {qrToPay && (
-        <div className="absolute inset-0 z-[100] bg-black/50 backdrop-blur-md flex items-center justify-center px-5 animate-in fade-in duration-200">
+        <div className="absolute inset-0 z-[70] bg-black/50 backdrop-blur-md flex items-center justify-center px-5 animate-in fade-in duration-200">
           <div className="w-full max-w-[320px] bg-white dark:bg-[#1C1C1E] border border-black/5 dark:border-white/10 rounded-[28px] p-6 flex flex-col items-center text-center shadow-2xl">
             <div className="w-14 h-14 bg-[#E33125] rounded-full flex items-center justify-center mb-3 shadow-md">
               <img src="/logo.png" alt="Logo" className="w-7 h-7 object-contain brightness-0 invert" />
@@ -289,11 +319,11 @@ export const App: React.FC = () => {
         </div>
       )}
 
-      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform" style={getScreenStyle('auth')}>
+      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10" style={getScreenStyle('auth')}>
         <AuthScreen onNext={() => setCurrentScreen('auth_code')} />
       </div>
 
-      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform" style={getScreenStyle('auth_code')}>
+      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-20" style={getScreenStyle('auth_code')}>
         <AuthCodeScreen
           isActive={currentScreen === 'auth_code'}
           onBack={() => setCurrentScreen('auth')}
@@ -301,12 +331,23 @@ export const App: React.FC = () => {
         />
       </div>
 
-      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform" style={getScreenStyle('onboarding')}>
-        <OnboardingScreen onComplete={handleOnboardingComplete} />
+      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10" style={getScreenStyle('onboarding')}>
+        <OnboardingScreen
+          initialName={initialData.name}
+          initialUsername={initialData.username}
+          onComplete={handleOnboardingComplete}
+        />
       </div>
 
-      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform" style={getScreenStyle('mainFlow')}>
-        <div className="absolute top-[-50px] left-[-50px] right-[-50px] bottom-[-50px] bg-cover bg-center pointer-events-none transition-opacity duration-200" style={{ backgroundImage: `url(${activeBg.image})` }} />
+      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10" style={getScreenStyle('mainFlow')}>
+        <div
+          className="absolute top-[-50px] left-[-50px] right-[-50px] bottom-[-50px] bg-cover bg-center pointer-events-none transition-opacity duration-200"
+          style={{
+            backgroundImage: `url(${activeBg.image})`,
+            transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.12)`,
+          }}
+        />
+
         <div className="absolute inset-0 w-full h-full will-change-transform z-10" style={getTabStyle('main')}>
           <MainScreen
             onOpenTransfer={() => setCurrentScreen('transfer')}
@@ -328,12 +369,16 @@ export const App: React.FC = () => {
             profile={profile}
           />
         </div>
+
         <div className="absolute inset-0 w-full h-full will-change-transform z-10" style={getTabStyle('exchange')}>
-          <ExchangeScreen marketData={marketData} currentBgImage={activeBg.image} />
+          <ExchangeScreen
+            marketData={marketData}
+            currentBgImage={activeBg.image}
+          />
         </div>
       </div>
 
-      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform" style={getScreenStyle('transfer')}>
+      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-[40]" style={getScreenStyle('transfer')}>
         <TransferScreen
           isActive={currentScreen === 'transfer'}
           onBack={() => setCurrentScreen(activeTab)}
@@ -348,7 +393,7 @@ export const App: React.FC = () => {
         />
       </div>
 
-      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform" style={getScreenStyle('request')}>
+      <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-[40]" style={getScreenStyle('request')}>
         <RequestScreen
           isActive={currentScreen === 'request'}
           onBack={() => setCurrentScreen(activeTab)}
