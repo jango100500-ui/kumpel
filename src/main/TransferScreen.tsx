@@ -86,6 +86,18 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
     }
   }, [isActive]);
 
+  const getMaxAllowed = (bal: number) => {
+    let max = bal;
+    if (bal > 75) {
+      let maxWithComm = Math.floor(bal / 1.05);
+      while (maxWithComm + Math.ceil(maxWithComm * 0.05) > bal) {
+        maxWithComm--;
+      }
+      max = Math.max(75, maxWithComm);
+    }
+    return Math.min(max, 9999);
+  };
+
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setErrorText(null);
     const raw = e.target.value.replace(/\D/g, '');
@@ -95,8 +107,21 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
     }
 
     let num = parseInt(raw, 10);
-    if (num > 9999) num = 9999;
+    const maxAllowed = getMaxAllowed(balance);
+    
+    if (num > maxAllowed) num = maxAllowed;
 
+    setAmount(num.toString());
+  };
+
+  const handleAmountBlur = () => {
+    if (amount === '') return;
+    let num = parseInt(amount, 10);
+    const maxAllowed = getMaxAllowed(balance);
+    
+    if (num > maxAllowed) num = maxAllowed;
+    if (num < 10 && maxAllowed >= 10) num = 10;
+    
     setAmount(num.toString());
   };
 
@@ -227,6 +252,7 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
                     pattern="[0-9]*"
                     value={amount}
                     onChange={handleAmountChange}
+                    onBlur={handleAmountBlur}
                     placeholder="0"
                     className="w-full bg-transparent text-right font-bold text-[17px] text-black dark:text-white outline-none placeholder:text-black/30 dark:placeholder:text-white/30 caret-[#E33125]"
                   />
