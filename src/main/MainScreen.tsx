@@ -247,11 +247,12 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   const displayName = profile.name.length > 7 ? profile.name.slice(0, 7) + '…' : profile.name;
 
   return (
-    <div className="relative w-full h-[100dvh] overflow-hidden flex flex-col select-none bg-transparent">
+    <div className="relative w-full h-full overflow-hidden flex flex-col select-none bg-transparent">
 
       <div
         ref={topContentRef}
-        className="relative z-10 w-full px-5 pt-3 pb-3 flex flex-col items-center flex-shrink-0 origin-top will-change-transform"
+        className="relative z-10 w-full px-5 pb-3 flex flex-col items-center flex-shrink-0 origin-top will-change-transform"
+        style={{ paddingTop: 'max(env(safe-area-inset-top), 48px)' }}
       >
         <div className="w-full max-w-[340px] flex justify-between items-center mb-2.5">
           <div className="h-11 px-2.5 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center gap-2.5 shadow-sm">
@@ -423,7 +424,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
 
         <div
           ref={historyListRef}
-          className="w-full max-w-[340px] px-2 overflow-y-auto scroll-y-touch touch-pan-y flex flex-col gap-2.5"
+          className="w-full max-w-[340px] px-2 pb-[120px] flex-1 overflow-y-auto scroll-y-touch touch-pan-y flex flex-col gap-2.5"
         >
           {transactions.length === 0 ? (
             <div className="w-full flex-1 flex items-center justify-center py-10 text-center">
