@@ -19,22 +19,22 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onNext }) => {
     try {
       const code = await api.requestAuthCode();
       const message = `Код проверки для входа в Kumpel — ${code}. Этот код будет активен в течение следующих двух минут.`;
-      
+
       if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
         new Notification('Kumpel Bank', { body: message, icon: '/logo.png' });
       } else {
         alert(message);
       }
       onNext();
-    } catch {
-      alert('Ошибка соединения с базой данных');
+    } catch (err: any) {
+      alert(err.message || 'Ошибка подключения к Supabase');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleRequestPush = () => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission().then(() => handleLogin());
     } else {
       handleLogin();
@@ -70,6 +70,55 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onNext }) => {
           >
             {isLoading ? 'Генерация кода...' : 'Войти через код'}
           </JellyButton>
+
+          <div className="w-full flex items-center justify-center my-4">
+            <div className="h-[0.5px] bg-white/60 flex-1" />
+            <span className="px-3 text-white/60 text-[13px] font-medium tracking-wide">
+              {loc.or}
+            </span>
+            <div className="h-[0.5px] bg-white/60 flex-1" />
+          </div>
+
+          <div className="w-full grid grid-cols-3 gap-2.5">
+            <JellyButton
+              type="button"
+              onClick={handleRequestPush}
+              flashColor="bg-white/15"
+              className="h-12 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center"
+            >
+              <img
+                src="/google.png"
+                alt="Google"
+                className="w-5 h-5 object-contain brightness-0 invert opacity-75 pointer-events-none"
+              />
+            </JellyButton>
+
+            <JellyButton
+              type="button"
+              onClick={handleRequestPush}
+              flashColor="bg-white/15"
+              className="h-12 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center"
+            >
+              <img
+                src="/apple.png"
+                alt="Apple"
+                className="w-5 h-5 object-contain brightness-0 invert opacity-75 pointer-events-none"
+              />
+            </JellyButton>
+
+            <JellyButton
+              type="button"
+              onClick={handleRequestPush}
+              flashColor="bg-white/15"
+              className="h-12 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center"
+            >
+              <img
+                src="/telegram.png"
+                alt="Telegram"
+                className="w-5 h-5 object-contain brightness-0 invert opacity-75 pointer-events-none"
+              />
+            </JellyButton>
+          </div>
 
           <p className="mt-7 text-white/60 text-[12px] leading-relaxed text-center">
             {loc.termsPrefix}{' '}
