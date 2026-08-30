@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useOrientation } from '@/mechanics/useOrientation';
 import { JellyButton } from '@/uis/JellyButton';
 import { CardStyle } from '@/mechanics/bankStore';
 import { api } from '@/mechanics/api';
@@ -8,7 +9,9 @@ interface RequestScreenProps {
   isActive: boolean;
   onBack: () => void;
   activeStyle: CardStyle;
+  currentBgImage: string;
   token: string | null;
+  isGlavny: boolean;
 }
 
 const JellyAnimatedText: React.FC<{ text: string }> = ({ text }) => {
@@ -33,8 +36,11 @@ export const RequestScreen: React.FC<RequestScreenProps> = ({
   isActive,
   onBack,
   activeStyle,
+  currentBgImage,
   token,
+  isGlavny,
 }) => {
+  const tilt = useOrientation(22);
   const [isLoading, setIsLoading] = useState(true);
   const [amount, setAmount] = useState('');
   const [isCopied, setIsCopied] = useState(false);
@@ -121,11 +127,18 @@ export const RequestScreen: React.FC<RequestScreenProps> = ({
   };
 
   return (
-    <div className="relative w-full h-full overflow-hidden flex flex-col justify-between select-none bg-transparent">
-      
+    <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col justify-between select-none bg-transparent">
+      <div
+        className="absolute inset-[-100px] bg-cover bg-center pointer-events-none will-change-transform transition-opacity duration-200"
+        style={{
+          backgroundImage: `url(${currentBgImage})`,
+          transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.25)`,
+        }}
+      />
+
       <div 
-        className="relative z-10 w-full px-5 pb-6 flex flex-col items-center justify-between flex-1 overflow-y-auto scroll-y-touch"
-        style={{ paddingTop: 'max(env(safe-area-inset-top), 48px)' }}
+        className={`relative z-10 w-full px-5 pb-6 flex flex-col items-center justify-between flex-1 overflow-y-auto scroll-y-touch ${isGlavny ? 'pt-3' : ''}`}
+        style={isGlavny ? {} : { paddingTop: 'max(env(safe-area-inset-top), 48px)' }}
       >
         <div className="w-full flex justify-between items-center mb-1">
           <JellyButton
