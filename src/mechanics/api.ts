@@ -5,6 +5,12 @@ const supabaseKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '';
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
+const getMskDate = (): Date => {
+  const d = new Date();
+  const utc = d.getTime() + d.getTimezoneOffset() * 60000;
+  return new Date(utc + 3600000 * 3);
+};
+
 export const api = {
   requestAuthCode: async (): Promise<string> => {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -126,30 +132,34 @@ export const api = {
   },
 
   transfer: async ({ token, recipient, amount }: { token: string; recipient: string; amount: number }): Promise<{ success: boolean; error?: string }> => {
-    const cleanRecip = recipient.replace('@', '').trim().toLowerCase();
-    const { data: sender } = await supabase.from('users').select('*').eq('token', token).single();
-    const { data: receiver } = await supabase.from('users').select('*').ilike('username', cleanRecip).single();
+    try {
+      const cleanRecip = recipient.replace('@', '').trim().toLowerCase();
+      const { data: sender } = await supabase.from('users').select('*').eq('token', token).single();
+      const { data: receiver } = await supabase.from('users').select('*').ilike('username', cleanRecip).single();
 
-    if (!receiver) return { success: false, error: 'Пользователь не найден' };
-    if (receiver.token === token) return { success: false, error: 'Нельзя перевести себе' };
+      if (!receiver) return { success: false, error: 'Пользователь не найден' };
+      if (receiver.token === token) return { success: false, error: 'Нельзя перевести себе' };
 
-    const comm = amount <= 75 ? 0 : Math.ceil(amount * 0.05);
-    const total = amount + comm;
+      const comm = amount <= 75 ? 0 : Math.ceil(amount * 0.05);
+      const total = amount + comm;
 
-    if (sender.balance < total) return { success: false, error: `Нужно ${total} ₭ (комиссия ${comm} ₭)` };
+      if (sender.balance < total) return { success: false, error: `Нужно ${total} ₭ (комиссия ${comm} ₭)` };
 
-    await supabase.from('users').update({ balance: sender.balance - total }).eq('token', token);
-    await supabase.from('users').update({ balance: Math.min(2000, receiver.balance + amount) }).eq('token', receiver.token);
+      await supabase.from('users').update({ balance: sender.balance - total }).eq('token', token);
+      await supabase.from('users').update({ balance: Math.min(2000, receiver.balance + amount) }).eq('token', receiver.token);
 
-    await supabase.from('transactions').insert({
-      sender_token: token,
-      sender_name: sender.name,
-      receiver_token: receiver.token,
-      receiver_name: receiver.name,
-      amount,
-    });
+      await supabase.from('transactions').insert({
+        sender_token: token,
+        sender_name: sender.name,
+        receiver_token: receiver.token,
+        receiver_name: receiver.name,
+        amount,
+      });
 
-    return { success: true };
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message || 'Сбой перевода' };
+    }
   },
 
   createQR: async ({ token, amount }: { token: string; amount: number }): Promise<{ success: boolean; qr_token?: string }> => {
@@ -165,34 +175,45 @@ export const api = {
   },
 
   getQRInfo: async (token: string): Promise<{ success: boolean; amount?: number; name?: string; username?: string }> => {
-    const { data: qr } = await supabase.from('qr_codes').select('*').eq('token', token).eq('claimed', false).single();
-    if (!qr) return { success: false };
-    const { data: creator } = await supabase.from('users').select('*').eq('token', qr.creator_token).single();
-    return { success: true, amount: qr.amount, name: creator?.name || 'Пользователь', username: creator?.username || 'user' };
+    try {
+      const { data: qr } = await supabase.from('qr_codes').select('*').eq('token', token).eq('claimed', false).single();
+      if (!qr) return { success: false };
+      const { data: creator } = await supabase.from('users').select('*').eq('token', qr.creator_token).single();
+      return { success: true, amount: qr.amount, name: creator?.name || 'Пользователь', username: creator?.username || 'user' };
+    } catch {
+      return { success: false };
+    }
   },
 
   payQR: async ({ token, qr_token }: { token: string; qr_token: string }): Promise<{ success: boolean; error?: string }> => {
-    const { data: qr } = await supabase.from('qr_codes').select('*').eq('token', qr_token).eq('claimed', false).single();
-    if (!qr) return { success: false, error: 'Счет уже оплачен' };
+    try {
+      const { data: qr, error: qrErr } = await supabase.from('qr_codes').select('*').eq('token', qr_token).eq('claimed', false).single();
+      if (qrErr || !qr) return { success: false, error: 'Счет уже оплачен или не существует' };
 
-    const { data: sender } = await supabase.from('users').select('*').eq('token', token).single();
-    const { data: receiver } = await supabase.from('users').select('*').eq('token', qr.creator_token).single();
+      const { data: sender, error: senderErr } = await supabase.from('users').select('*').eq('token', token).single();
+      if (senderErr || !sender) return { success: false, error: 'Отправитель не найден' };
 
-    if (sender.balance < qr.amount) return { success: false, error: 'Недостаточно средств' };
-    if (sender.token === qr.creator_token) return { success: false, error: 'Нельзя оплатить свой счет' };
+      const { data: receiver, error: recErr } = await supabase.from('users').select('*').eq('token', qr.creator_token).single();
+      if (recErr || !receiver) return { success: false, error: 'Получатель не найден' };
 
-    await supabase.from('users').update({ balance: sender.balance - qr.amount }).eq('token', token);
-    await supabase.from('users').update({ balance: Math.min(2000, receiver.balance + qr.amount) }).eq('token', receiver.token);
-    await supabase.from('qr_codes').update({ claimed: true }).eq('token', qr_token);
+      if (sender.balance < qr.amount) return { success: false, error: 'Недостаточно средств' };
+      if (sender.token === qr.creator_token) return { success: false, error: 'Нельзя оплатить свой счет' };
 
-    await supabase.from('transactions').insert({
-      sender_token: token,
-      sender_name: sender.name,
-      receiver_token: receiver.token,
-      receiver_name: receiver.name,
-      amount: qr.amount,
-    });
+      await supabase.from('users').update({ balance: sender.balance - qr.amount }).eq('token', token);
+      await supabase.from('users').update({ balance: Math.min(2000, receiver.balance + qr.amount) }).eq('token', receiver.token);
+      await supabase.from('qr_codes').update({ claimed: true }).eq('token', qr_token);
 
-    return { success: true };
+      await supabase.from('transactions').insert({
+        sender_token: token,
+        sender_name: sender.name,
+        receiver_token: receiver.token,
+        receiver_name: receiver.name,
+        amount: qr.amount,
+      });
+
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message || 'Внутренняя ошибка' };
+    }
   },
 };
