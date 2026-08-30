@@ -41,7 +41,7 @@ export const AuthCodeScreen: React.FC<AuthCodeScreenProps> = ({ isActive, onBack
 
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
-    const pasted = e.clipboardData.getData('text').replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 6);
+    const pasted = e.clipboardData.getData('text').replace(/[^0-9]/g, '').slice(0, 6);
     if (pasted.length > 0) {
       const newCode = ['', '', '', '', '', ''];
       for (let i = 0; i < pasted.length; i++) {
@@ -57,7 +57,7 @@ export const AuthCodeScreen: React.FC<AuthCodeScreenProps> = ({ isActive, onBack
   };
 
   const handleChange = (index: number, value: string) => {
-    const val = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    const val = value.replace(/[^0-9]/g, '');
     if (!val && value !== '') return;
 
     const newCode = [...code];
@@ -122,6 +122,8 @@ export const AuthCodeScreen: React.FC<AuthCodeScreenProps> = ({ isActive, onBack
                 key={i}
                 ref={(el) => (inputRefs.current[i] = el)}
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={char}
                 onPaste={handlePaste}
                 onChange={(e) => handleChange(i, e.target.value)}
@@ -132,15 +134,7 @@ export const AuthCodeScreen: React.FC<AuthCodeScreenProps> = ({ isActive, onBack
           </div>
 
           <p className="text-white/70 text-[13px] font-medium leading-relaxed px-2">
-            Для регистрации с Telegram, получите уникальный код в нашем боте —{' '}
-            <a
-              href="https://t.me/KumpelBankBot"
-              target="_blank"
-              rel="noreferrer"
-              className="text-white underline underline-offset-2"
-            >
-              @KumpelBankBot
-            </a>
+            Проверьте уведомления. Если пуш-уведомление не пришло, возможно, вы запретили их отправку в браузере.
           </p>
         </div>
 
