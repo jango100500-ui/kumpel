@@ -38,6 +38,11 @@ export const App: React.FC = () => {
     avatar: null,
   });
 
+  const [initialData, setInitialData] = useState<{ name: string; username: string }>({
+    name: '',
+    username: '',
+  });
+
   const [balance, setBalance] = useState(0);
   const [marketData, setMarketData] = useState<{
     rate: number;
@@ -73,14 +78,14 @@ export const App: React.FC = () => {
   const loadData = async (userToken: string) => {
     try {
       const res = await api.syncUser(userToken);
-      if (!res.error) {
-        setProfile(res.profile!);
-        setBalance(res.balance!);
+      if (res && !res.error && res.profile) {
+        setProfile(res.profile);
+        setBalance(res.balance || 0);
         setMarketData({
-          rate: res.rate!,
-          history: res.market_history!,
+          rate: res.rate || 1.0,
+          history: res.market_history || [],
         });
-        setTransactions(res.transactions!);
+        setTransactions(res.transactions || []);
         setCurrentScreen('main');
       } else {
         setCurrentScreen('auth');
@@ -261,7 +266,7 @@ export const App: React.FC = () => {
   }, [successToast]);
 
   return (
-    <div className="absolute inset-0 w-full h-full overflow-hidden select-none bg-[#5491D0]">
+    <div className="relative w-full h-full min-h-[100dvh] overflow-hidden select-none bg-[#5491D0]">
       <div
         className={`absolute inset-0 z-[200] bg-[#5491D0] transition-opacity duration-700 ease-in-out ${
           isAppLoading ? 'opacity-100' : 'opacity-0 pointer-events-none'
@@ -329,16 +334,18 @@ export const App: React.FC = () => {
 
       <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10" style={getScreenStyle('onboarding')}>
         <OnboardingScreen
+          initialName={initialData.name}
+          initialUsername={initialData.username}
           onComplete={handleOnboardingComplete}
         />
       </div>
 
       <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10" style={getScreenStyle('mainFlow')}>
         <div
-          className="absolute inset-[-50px] bg-cover bg-center pointer-events-none transition-opacity duration-200"
+          className="absolute inset-[-100px] bg-cover bg-center pointer-events-none transition-opacity duration-200"
           style={{
             backgroundImage: `url(${activeBg.image})`,
-            transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.12)`,
+            transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.25)`,
           }}
         />
 
