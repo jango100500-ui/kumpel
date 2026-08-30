@@ -261,7 +261,7 @@ export const App: React.FC = () => {
   }, [successToast]);
 
   return (
-    <div className="relative w-full h-full overflow-hidden select-none bg-[#5491D0]">
+    <div className="relative w-full h-[100dvh] overflow-hidden select-none bg-[#5491D0]">
       <div
         className={`absolute inset-0 z-[200] bg-[#5491D0] transition-opacity duration-700 ease-in-out ${
           isAppLoading ? 'opacity-100' : 'opacity-0 pointer-events-none'
@@ -269,7 +269,7 @@ export const App: React.FC = () => {
       />
 
       {successToast && (
-        <div className="absolute top-[calc(env(safe-area-inset-top,16px)+8px)] inset-x-0 z-[60] flex justify-center px-4 animate-in fade-in slide-in-from-top-4 duration-300 pointer-events-none">
+        <div className="absolute top-5 inset-x-0 z-[60] flex justify-center px-4 animate-in fade-in slide-in-from-top-4 duration-300 pointer-events-none">
           <div className="w-full max-w-[340px] bg-white/90 dark:bg-[#1C1C1E]/90 border border-black/10 dark:border-white/10 backdrop-blur-xl rounded-[20px] p-4 shadow-xl flex items-center gap-3 pointer-events-auto">
             <div className="w-9 h-9 rounded-full bg-[#34C759] flex items-center justify-center shadow-sm flex-shrink-0">
               <svg className="w-5 h-5 text-white stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -328,17 +328,15 @@ export const App: React.FC = () => {
       </div>
 
       <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10" style={getScreenStyle('onboarding')}>
-        <OnboardingScreen
-          onComplete={handleOnboardingComplete}
-        />
+        <OnboardingScreen onComplete={handleOnboardingComplete} />
       </div>
 
       <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10" style={getScreenStyle('mainFlow')}>
         <div
-          className="absolute inset-[-60px] bg-cover bg-center pointer-events-none transition-opacity duration-200"
+          className="absolute top-[-50px] left-[-50px] right-[-50px] bottom-[-50px] bg-cover bg-center pointer-events-none transition-opacity duration-200"
           style={{
             backgroundImage: `url(${activeBg.image})`,
-            transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.15)`,
+            transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.12)`,
           }}
         />
 
@@ -367,7 +365,6 @@ export const App: React.FC = () => {
         <div className="absolute inset-0 w-full h-full will-change-transform z-10" style={getTabStyle('exchange')}>
           <ExchangeScreen
             marketData={marketData}
-            currentBgImage={activeBg.image}
           />
         </div>
       </div>
@@ -382,7 +379,6 @@ export const App: React.FC = () => {
           }}
           activeStyle={activeStyle}
           balance={balance}
-          currentBgImage={activeBg.image}
           token={token}
         />
       </div>
@@ -392,7 +388,6 @@ export const App: React.FC = () => {
           isActive={currentScreen === 'request'}
           onBack={() => setCurrentScreen(activeTab)}
           activeStyle={activeStyle}
-          currentBgImage={activeBg.image}
           token={token}
         />
       </div>
@@ -404,14 +399,14 @@ export const App: React.FC = () => {
         }}
       >
         <div
-          className="absolute bottom-0 inset-x-0 h-[140px] backdrop-blur-[16px] -z-10 transition-opacity duration-500"
+          className="absolute bottom-0 inset-x-0 h-[120px] backdrop-blur-[16px] -z-10 transition-opacity duration-500"
           style={{
             WebkitMaskImage: 'linear-gradient(to top, black 50%, transparent 100%)',
             maskImage: 'linear-gradient(to top, black 50%, transparent 100%)',
             opacity: isTabBarVisible ? 1 : 0,
           }}
         />
-        <div className="w-full pb-[calc(env(safe-area-inset-bottom,16px)+10px)] pt-6 pointer-events-auto">
+        <div className="w-full pb-6 pt-10 pointer-events-auto">
           <TabBar activeTab={activeTab} onChange={(tab) => { setActiveTab(tab); setCurrentScreen(tab); }} />
         </div>
       </div>
