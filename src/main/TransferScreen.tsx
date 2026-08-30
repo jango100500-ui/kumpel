@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useOrientation } from '@/mechanics/useOrientation';
 import { JellyButton } from '@/uis/JellyButton';
 import { CardStyle } from '@/mechanics/bankStore';
 import { api } from '@/mechanics/api';
@@ -10,7 +9,6 @@ interface TransferScreenProps {
   onSuccess: (amount: number) => void;
   activeStyle: CardStyle;
   balance: number;
-  currentBgImage: string;
   token: string | null;
 }
 
@@ -40,10 +38,8 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
   onSuccess,
   activeStyle,
   balance,
-  currentBgImage,
   token,
 }) => {
-  const tilt = useOrientation(22);
   const [amount, setAmount] = useState('');
   const [recipient, setRecipient] = useState('');
   const [errorText, setErrorText] = useState<string | null>(null);
@@ -188,16 +184,11 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
   };
 
   return (
-    <div className="relative w-full h-full min-h-[100dvh] overflow-hidden flex flex-col justify-between select-none bg-transparent">
-      <div
-        className="absolute inset-[-100px] bg-cover bg-center pointer-events-none will-change-transform"
-        style={{
-          backgroundImage: `url(${currentBgImage})`,
-          transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.25)`,
-        }}
-      />
-
-      <div className="relative z-10 w-full px-5 pt-3 pb-6 flex flex-col items-center justify-between flex-1 overflow-y-auto scroll-y-touch">
+    <div className="relative w-full h-full overflow-hidden flex flex-col justify-between select-none bg-transparent">
+      <div 
+        className="relative z-10 w-full px-5 pb-6 flex flex-col items-center justify-between flex-1 overflow-y-auto scroll-y-touch"
+        style={{ paddingTop: 'max(env(safe-area-inset-top), 48px)' }}
+      >
         <div className="w-full flex justify-between items-center mb-1">
           <JellyButton
             type="button"
