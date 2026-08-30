@@ -262,9 +262,9 @@ export const App: React.FC = () => {
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden select-none bg-[#5491D0]">
       
-      {/* Black Loading Overlay */}
+      {/* Голубой Loading Overlay */}
       <div
-        className={`absolute inset-0 z-[200] bg-black transition-opacity duration-700 ease-in-out ${
+        className={`absolute inset-0 z-[200] bg-[#5491D0] transition-opacity duration-700 ease-in-out ${
           isAppLoading ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
       />
