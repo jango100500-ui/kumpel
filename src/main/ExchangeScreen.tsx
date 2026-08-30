@@ -5,6 +5,7 @@ interface ExchangeScreenProps {
     rate: number;
     history: Array<{ date: string; rate: number }>;
   };
+  isGlavny: boolean;
 }
 
 const PHYSICS = {
@@ -138,7 +139,7 @@ const TimeframeSelector: React.FC<{ activeTab: number; onChange: (i: number) => 
   );
 };
 
-export const ExchangeScreen: React.FC<ExchangeScreenProps> = ({ marketData }) => {
+export const ExchangeScreen: React.FC<ExchangeScreenProps> = ({ marketData, isGlavny }) => {
   const [selectedTf, setSelectedTf] = useState(4);
 
   const currentRate = marketData.rate || 1.0;
@@ -187,8 +188,8 @@ export const ExchangeScreen: React.FC<ExchangeScreenProps> = ({ marketData }) =>
     <div className="relative w-full h-full overflow-hidden flex flex-col select-none bg-transparent">
       
       <div 
-        className="relative z-10 w-full h-full flex flex-col items-center px-5 pb-[110px]"
-        style={{ paddingTop: 'calc(max(env(safe-area-inset-top), 48px) + 16px)' }}
+        className={`relative z-10 w-full h-full flex flex-col items-center px-5 pb-[110px] ${isGlavny ? 'pt-[66px]' : ''}`}
+        style={isGlavny ? {} : { paddingTop: 'calc(max(env(safe-area-inset-top), 48px) + 16px)' }}
       >
         <div className="flex-shrink-0 w-full max-w-[340px] bg-white/75 dark:bg-[#1C1C1E]/75 backdrop-blur-[24px] rounded-[24px] shadow-lg border border-white/40 dark:border-white/10 p-4 flex justify-between items-center mb-3">
           <div className="flex flex-col flex-1">
