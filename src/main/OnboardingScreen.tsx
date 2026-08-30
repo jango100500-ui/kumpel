@@ -91,12 +91,12 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   };
 
   return (
-    <div className="relative w-full h-full overflow-hidden flex flex-col justify-between select-none bg-transparent">
+    <div className="relative w-full h-full min-h-[100dvh] overflow-hidden flex flex-col justify-between select-none bg-transparent">
       <div
-        className="absolute inset-[-50px] bg-cover bg-center pointer-events-none will-change-transform"
+        className="absolute inset-[-100px] bg-cover bg-center pointer-events-none will-change-transform"
         style={{
           backgroundImage: 'url(/question1.png)',
-          transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.12)`,
+          transform: `translate3d(${tilt.x}px, ${tilt.y}px, 0) scale(1.25)`,
         }}
       />
 
