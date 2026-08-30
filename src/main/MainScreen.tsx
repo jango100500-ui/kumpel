@@ -61,6 +61,7 @@ interface MainScreenProps {
     username: string;
     avatar: string | null;
   };
+  isGlavny: boolean;
 }
 
 export const MainScreen: React.FC<MainScreenProps> = ({
@@ -78,6 +79,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   isEditMode,
   setIsEditMode,
   profile,
+  isGlavny,
 }) => {
   const sheetRef = useRef<HTMLDivElement>(null);
   const topContentRef = useRef<HTMLDivElement>(null);
@@ -248,11 +250,10 @@ export const MainScreen: React.FC<MainScreenProps> = ({
 
   return (
     <div className="relative w-full h-full overflow-hidden flex flex-col select-none bg-transparent">
-
       <div
         ref={topContentRef}
-        className="relative z-10 w-full px-5 pb-3 flex flex-col items-center flex-shrink-0 origin-top will-change-transform"
-        style={{ paddingTop: 'max(env(safe-area-inset-top), 48px)' }}
+        className={`relative z-10 w-full px-5 pb-3 flex flex-col items-center flex-shrink-0 origin-top will-change-transform ${isGlavny ? 'pt-3' : ''}`}
+        style={isGlavny ? {} : { paddingTop: 'max(env(safe-area-inset-top), 48px)' }}
       >
         <div className="w-full max-w-[340px] flex justify-between items-center mb-2.5">
           <div className="h-11 px-2.5 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center gap-2.5 shadow-sm">
