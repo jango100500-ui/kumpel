@@ -261,6 +261,17 @@ export const MainScreen: React.FC<MainScreenProps> = ({
     rafId.current = requestAnimationFrame(smoothSnap);
   };
 
+  const handleSaveAll = () => {
+    setSavedStyleId(tempStyleId);
+    setSavedBgId(tempBgId);
+    setSavedTheme(tempTheme);
+    setSavedWatermark(tempWatermark);
+    setStoredWatermark(tempWatermark);
+    setPreviewTheme(null);
+    setIsEditMode(false);
+    setEditTab('theme');
+  };
+
   const toggleEditMode = () => {
     if (!isEditMode) {
       setTempStyleId(savedStyleId);
@@ -274,18 +285,8 @@ export const MainScreen: React.FC<MainScreenProps> = ({
       setIsEditMode(true);
       setIsFlipped(false);
     } else {
-      handleSaveTheme();
+      handleSaveAll();
     }
-  };
-
-  const handleSaveTheme = () => {
-    setSavedStyleId(tempStyleId);
-    setSavedBgId(tempBgId);
-    setSavedTheme(tempTheme);
-    setSavedWatermark(tempWatermark);
-    setStoredWatermark(tempWatermark);
-    setPreviewTheme(null);
-    setIsEditMode(false);
   };
 
   useEffect(() => {
@@ -307,8 +308,8 @@ export const MainScreen: React.FC<MainScreenProps> = ({
         style={isGlavny ? {} : { paddingTop: 'max(env(safe-area-inset-top), 48px)' }}
       >
         <div className="w-full max-w-[340px] flex justify-between items-center mb-2.5">
-          <div className="h-11 px-2.5 rounded-full bg-black/10 dark:bg-white/10 border border-white/[0.16] backdrop-blur-md flex items-center gap-2.5 shadow-sm">
-            <div className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 bg-black/10 dark:bg-white/10">
+          <div className="h-11 px-2.5 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center gap-2.5 shadow-sm">
+            <div className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 bg-black/10">
               {profile.avatar ? (
                 <img
                   src={profile.avatar}
@@ -336,7 +337,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
             type="button"
             onClick={toggleEditMode}
             flashColor="bg-white/15"
-            className="w-11 h-11 rounded-full bg-black/10 dark:bg-white/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center shadow-sm"
+            className="w-11 h-11 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center shadow-sm"
           >
             <img
               src={isEditMode ? '/close.png' : '/edit.png'}
@@ -527,8 +528,12 @@ export const MainScreen: React.FC<MainScreenProps> = ({
             <JellyButton
               type="button"
               onClick={() => {
-                setEditTab('theme');
-                setIsWatermarkActive(false);
+                if (hasWatermarkChanges) {
+                  handleSaveAll();
+                } else {
+                  setEditTab('theme');
+                  setIsWatermarkActive(false);
+                }
               }}
               flashColor="bg-white/15"
               className={`w-full h-12 rounded-full border border-white/[0.16] backdrop-blur-md flex items-center justify-center gap-2 transition-all duration-300 ${
@@ -730,6 +735,21 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                 })}
               </div>
             </div>
+
+            <div className="w-full flex-shrink-0 pt-2 pb-2">
+              <JellyButton
+                type="button"
+                onClick={handleSaveAll}
+                flashColor="bg-black/10"
+                className="w-full h-12 min-h-[48px] rounded-full flex items-center justify-center font-semibold text-[16px] shadow-sm transition-colors duration-300 flex-shrink-0"
+                style={{
+                  backgroundColor: activeStyle.accentColor,
+                  color: activeStyle.id === 'vanilla' ? '#19181F' : '#FFFFFF',
+                }}
+              >
+                Сохранить
+              </JellyButton>
+            </div>
           </div>
         ) : (
           <div className="w-full max-w-[340px] px-2 pb-[120px] flex-1 overflow-y-auto scroll-y-touch flex flex-col gap-2">
@@ -763,6 +783,20 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                 </button>
               )
             })}
+            <div className="w-full flex-shrink-0 pt-4 pb-2 mt-auto">
+              <JellyButton
+                type="button"
+                onClick={handleSaveAll}
+                flashColor="bg-black/10"
+                className="w-full h-12 min-h-[48px] rounded-full flex items-center justify-center font-semibold text-[16px] shadow-sm transition-colors duration-300 flex-shrink-0"
+                style={{
+                  backgroundColor: activeStyle.accentColor,
+                  color: activeStyle.id === 'vanilla' ? '#19181F' : '#FFFFFF',
+                }}
+              >
+                Сохранить
+              </JellyButton>
+            </div>
           </div>
         )}
       </div>
