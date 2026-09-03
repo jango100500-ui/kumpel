@@ -43,6 +43,26 @@ export const availableWatermarks = Object.keys(rawWatermarks)
   .map((path) => path.replace('/public/', ''))
   .sort();
 
+export const getStoredStyleId = (): string => {
+  if (typeof window === 'undefined') return 'classic';
+  return localStorage.getItem('kumpel_styleId') || 'classic';
+};
+
+export const setStoredStyleId = (id: string): void => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('kumpel_styleId', id);
+};
+
+export const getStoredBgId = (): string => {
+  if (typeof window === 'undefined') return 'classic';
+  return localStorage.getItem('kumpel_bgId') || 'classic';
+};
+
+export const setStoredBgId = (id: string): void => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('kumpel_bgId', id);
+};
+
 export const getStoredWatermark = (): WatermarkConfig => {
   if (typeof window === 'undefined') return { id: null, rotation: 90, scale: 1, x: 0, y: 0 };
   const val = localStorage.getItem('kumpel_watermark');
