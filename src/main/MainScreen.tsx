@@ -1,6 +1,14 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { JellyButton } from '@/uis/JellyButton';
-import { cardStyles, backgroundOptions, ThemeMode } from '@/mechanics/bankStore';
+import { 
+  cardStyles, 
+  backgroundOptions, 
+  ThemeMode, 
+  availableWatermarks, 
+  getStoredWatermark, 
+  setStoredWatermark, 
+  WatermarkConfig 
+} from '@/mechanics/bankStore';
 
 const AnimatedDigit: React.FC<{ value: string }> = ({ value }) => {
   const [current, setCurrent] = useState(value);
@@ -100,7 +108,17 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   const [tempBgId, setTempBgId] = useState(savedBgId);
   const [tempTheme, setTempTheme] = useState<ThemeMode>(savedTheme);
 
+  const [editTab, setEditTab] = useState<'theme' | 'watermark'>('theme');
+  const [savedWatermark, setSavedWatermark] = useState<WatermarkConfig>(getStoredWatermark());
+  const [tempWatermark, setTempWatermark] = useState<WatermarkConfig>(savedWatermark);
+  const [isWatermarkActive, setIsWatermarkActive] = useState(false);
+
+  const [rotInput, setRotInput] = useState(false);
+  const [scaleInput, setScaleInput] = useState(false);
+
   const activeStyle = cardStyles.find((s) => s.id === (isEditMode ? tempStyleId : savedStyleId)) || cardStyles[0];
+  const activeWatermark = isEditMode ? tempWatermark : savedWatermark;
+  const hasWatermarkChanges = tempWatermark.id !== savedWatermark.id || tempWatermark.rotation !== savedWatermark.rotation || tempWatermark.scale !== savedWatermark.scale;
 
   useEffect(() => {
     const updateTimer = () => {
@@ -125,6 +143,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   }, []);
 
   const handleCardPointerDown = () => {
+    if (isEditMode && editTab === 'watermark') return; 
     if (isEditMode) return;
     flipTimeoutRef.current = setTimeout(() => {
       setIsFlipped((prev) => !prev);
@@ -220,6 +239,9 @@ export const MainScreen: React.FC<MainScreenProps> = ({
       setTempStyleId(savedStyleId);
       setTempBgId(savedBgId);
       setTempTheme(savedTheme);
+      setTempWatermark(savedWatermark);
+      setEditTab('theme');
+      setIsWatermarkActive(false);
       targetY.current = 380;
       currentY.current = 380;
       setIsEditMode(true);
@@ -230,7 +252,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
     }
   };
 
-  const handleSave = () => {
+  const handleSaveTheme = () => {
     setSavedStyleId(tempStyleId);
     setSavedBgId(tempBgId);
     setSavedTheme(tempTheme);
@@ -249,15 +271,16 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   const displayName = profile.name.length > 7 ? profile.name.slice(0, 7) + '…' : profile.name;
 
   return (
-    <div className="relative w-full h-full overflow-hidden flex flex-col select-none bg-transparent">
+    <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col select-none bg-transparent">
+      
       <div
         ref={topContentRef}
         className={`relative z-10 w-full px-5 pb-3 flex flex-col items-center flex-shrink-0 origin-top will-change-transform ${isGlavny ? 'pt-3' : ''}`}
         style={isGlavny ? {} : { paddingTop: 'max(env(safe-area-inset-top), 48px)' }}
       >
         <div className="w-full max-w-[340px] flex justify-between items-center mb-2.5">
-          <div className="h-11 px-2.5 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center gap-2.5 shadow-sm">
-            <div className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 bg-black/10">
+          <div className="h-11 px-2.5 rounded-full bg-black/10 dark:bg-white/10 border border-white/[0.16] backdrop-blur-md flex items-center gap-2.5 shadow-sm">
+            <div className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 bg-black/10 dark:bg-white/10">
               {profile.avatar ? (
                 <img
                   src={profile.avatar}
@@ -285,7 +308,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
             type="button"
             onClick={toggleEditMode}
             flashColor="bg-white/15"
-            className="w-11 h-11 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center shadow-sm"
+            className="w-11 h-11 rounded-full bg-black/10 dark:bg-white/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center shadow-sm"
           >
             <img
               src={isEditMode ? '/close.png' : '/edit.png'}
@@ -296,7 +319,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
         </div>
 
         <div
-          className="perspective-1000 w-full max-w-[340px] cursor-pointer"
+          className="perspective-1000 w-full max-w-[340px] cursor-pointer relative"
           onPointerDown={handleCardPointerDown}
           onPointerUp={handleCardPointerCancel}
           onPointerLeave={handleCardPointerCancel}
@@ -310,17 +333,80 @@ export const MainScreen: React.FC<MainScreenProps> = ({
             <div
               className={`absolute inset-0 backface-hidden rounded-[24px] p-5 flex flex-col justify-between shadow-lg transition-colors duration-300 ${activeStyle.bgClass} ${activeStyle.textClass}`}
             >
-              <div className="w-full flex justify-start items-start gap-3">
+              <div className="w-full flex justify-start items-start gap-3 relative z-20">
                 <span className="text-[17px] font-semibold tracking-wide">
                   Kumpel
                 </span>
               </div>
 
-              <div className="absolute top-[48px] right-[20px]">
+              <div className="absolute top-[48px] right-[20px] z-20">
                 <EMVChip />
               </div>
 
-              <div className="w-full flex justify-between items-end mt-auto">
+              <div className="absolute inset-y-0 right-6 flex items-center justify-center w-[120px] pointer-events-none z-10">
+                <div 
+                  className={`relative flex items-center justify-center w-full h-full ${isEditMode && editTab === 'watermark' ? 'pointer-events-auto' : ''}`}
+                >
+                  {activeWatermark.id && (
+                    <img
+                      src={`/${activeWatermark.id}`}
+                      alt="Watermark"
+                      onClick={() => { if(isEditMode && editTab === 'watermark') setIsWatermarkActive(true); }}
+                      className="w-24 h-24 object-contain transition-all duration-300 cursor-pointer"
+                      style={{
+                        filter: 'brightness(0) invert(1)',
+                        opacity: 0.075,
+                        transform: `rotate(${activeWatermark.rotation}deg) scale(${activeWatermark.scale})`
+                      }}
+                    />
+                  )}
+
+                  {isEditMode && editTab === 'watermark' && isWatermarkActive && activeWatermark.id && (
+                    <>
+                      <div className="absolute -top-6 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full px-1.5 py-1 gap-1.5 shadow-lg border border-white/20 animate-in fade-in zoom-in-95" onClick={e => e.stopPropagation()}>
+                        <button onClick={() => setTempWatermark({ ...tempWatermark, rotation: tempWatermark.rotation - 1 })} className="w-6 h-6 rounded-full bg-white/20 text-white flex items-center justify-center text-[16px] font-bold active:bg-white/40">−</button>
+                        <div className="w-10 text-center text-white text-[12px] font-bold cursor-pointer" onClick={() => setRotInput(true)}>
+                          {rotInput ? (
+                            <input 
+                              type="number" 
+                              autoFocus 
+                              onBlur={() => setRotInput(false)}
+                              onChange={(e) => setTempWatermark({ ...tempWatermark, rotation: parseInt(e.target.value) || 0 })}
+                              className="w-full bg-transparent text-center outline-none"
+                              value={tempWatermark.rotation}
+                            />
+                          ) : (
+                            `${tempWatermark.rotation}°`
+                          )}
+                        </div>
+                        <button onClick={() => setTempWatermark({ ...tempWatermark, rotation: tempWatermark.rotation + 1 })} className="w-6 h-6 rounded-full bg-white/20 text-white flex items-center justify-center text-[16px] font-bold active:bg-white/40">+</button>
+                      </div>
+
+                      <div className="absolute -bottom-6 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full px-1.5 py-1 gap-1.5 shadow-lg border border-white/20 animate-in fade-in zoom-in-95" onClick={e => e.stopPropagation()}>
+                        <button onClick={() => setTempWatermark({ ...tempWatermark, scale: Math.max(0.3, Math.round((tempWatermark.scale - 0.1)*10)/10) })} className="w-6 h-6 rounded-full bg-white/20 text-white flex items-center justify-center text-[16px] font-bold active:bg-white/40">−</button>
+                        <div className="w-10 text-center text-white text-[12px] font-bold cursor-pointer" onClick={() => setScaleInput(true)}>
+                          {scaleInput ? (
+                            <input 
+                              type="number" 
+                              step="0.1"
+                              autoFocus 
+                              onBlur={() => setScaleInput(false)}
+                              onChange={(e) => setTempWatermark({ ...tempWatermark, scale: Math.min(2.0, Math.max(0.3, parseFloat(e.target.value) || 1)) })}
+                              className="w-full bg-transparent text-center outline-none"
+                              value={tempWatermark.scale}
+                            />
+                          ) : (
+                            `${tempWatermark.scale}`
+                          )}
+                        </div>
+                        <button onClick={() => setTempWatermark({ ...tempWatermark, scale: Math.min(2.0, Math.round((tempWatermark.scale + 0.1)*10)/10) })} className="w-6 h-6 rounded-full bg-white/20 text-white flex items-center justify-center text-[16px] font-bold active:bg-white/40">+</button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="w-full flex justify-between items-end mt-auto relative z-20">
                 <div className="flex flex-col">
                   <span className="text-[28px] font-bold tracking-tight leading-none mb-1 transition-all duration-300">
                     {balance} ₭
@@ -364,41 +450,63 @@ export const MainScreen: React.FC<MainScreenProps> = ({
         </div>
 
         <div className="w-full max-w-[340px] flex gap-3 mt-3.5">
-          <JellyButton
-            type="button"
-            onClick={isEditMode ? undefined : onOpenTransfer}
-            flashColor="bg-white/15"
-            className={`flex-1 h-12 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center gap-2 transition-opacity duration-300 ${
-              isEditMode ? 'opacity-40 pointer-events-none' : 'opacity-100'
-            }`}
-          >
-            <img
-              src="/share.png"
-              alt="Share"
-              className="w-4 h-4 object-contain brightness-0 invert opacity-75 pointer-events-none"
-            />
-            <span className="text-white/90 text-[15px] font-medium tracking-wide">
-              Перевод
-            </span>
-          </JellyButton>
-
-          <JellyButton
-            type="button"
-            onClick={isEditMode ? undefined : onOpenRequest}
-            flashColor="bg-white/15"
-            className={`flex-1 h-12 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center gap-2 transition-opacity duration-300 ${
-              isEditMode ? 'opacity-40 pointer-events-none' : 'opacity-100'
-            }`}
-          >
-            <img
-              src="/request.png"
-              alt="Request"
-              className="w-4 h-4 object-contain brightness-0 invert opacity-75 pointer-events-none"
-            />
-            <span className="text-white/90 text-[15px] font-medium tracking-wide">
-              Запросить
-            </span>
-          </JellyButton>
+          {!isEditMode ? (
+            <>
+              <JellyButton
+                type="button"
+                onClick={onOpenTransfer}
+                flashColor="bg-white/15"
+                className="flex-1 h-12 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center gap-2 transition-opacity duration-300"
+              >
+                <img src="/share.png" className="w-4 h-4 object-contain brightness-0 invert opacity-75 pointer-events-none" />
+                <span className="text-white/90 text-[15px] font-medium tracking-wide">Перевод</span>
+              </JellyButton>
+              <JellyButton
+                type="button"
+                onClick={onOpenRequest}
+                flashColor="bg-white/15"
+                className="flex-1 h-12 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center gap-2 transition-opacity duration-300"
+              >
+                <img src="/request.png" className="w-4 h-4 object-contain brightness-0 invert opacity-75 pointer-events-none" />
+                <span className="text-white/90 text-[15px] font-medium tracking-wide">Запросить</span>
+              </JellyButton>
+            </>
+          ) : editTab === 'theme' ? (
+            <JellyButton
+              type="button"
+              onClick={() => { setEditTab('watermark'); setIsFlipped(false); setIsWatermarkActive(false); }}
+              flashColor="bg-white/15"
+              className="w-full h-12 rounded-full bg-black/10 border border-white/[0.16] backdrop-blur-md flex items-center justify-center gap-2 transition-opacity duration-300"
+            >
+              <img src="/style.png" className="w-5 h-5 object-contain brightness-0 invert opacity-75 pointer-events-none" />
+              <span className="text-white/90 text-[15px] font-medium tracking-wide">Редактировать карту</span>
+            </JellyButton>
+          ) : (
+            <JellyButton
+              type="button"
+              onClick={() => {
+                if (hasWatermarkChanges) {
+                  setSavedWatermark(tempWatermark);
+                  setStoredWatermark(tempWatermark);
+                }
+                setEditTab('theme');
+                setIsWatermarkActive(false);
+              }}
+              flashColor="bg-white/15"
+              className={`w-full h-12 rounded-full border border-white/[0.16] backdrop-blur-md flex items-center justify-center gap-2 transition-all duration-300 ${
+                hasWatermarkChanges ? 'shadow-md border-white/20' : 'bg-black/10'
+              }`}
+              style={{
+                backgroundColor: hasWatermarkChanges ? activeStyle.accentColor : undefined,
+                color: hasWatermarkChanges ? (activeStyle.id === 'vanilla' ? '#19181F' : '#FFFFFF') : undefined
+              }}
+            >
+              {!hasWatermarkChanges && <img src="/back.png" className="w-4 h-4 object-contain brightness-0 invert opacity-75 pointer-events-none" />}
+              <span className={`text-[15px] font-medium tracking-wide ${hasWatermarkChanges ? '' : 'text-white/90'}`}>
+                {hasWatermarkChanges ? 'Сохранить' : 'Назад'}
+              </span>
+            </JellyButton>
+          )}
         </div>
       </div>
 
@@ -484,121 +592,156 @@ export const MainScreen: React.FC<MainScreenProps> = ({
           <div className="w-9 h-1.5 rounded-full bg-black/20 dark:bg-white/20 pointer-events-none" />
         </div>
 
-        <div className="w-full max-w-[340px] px-2 pb-[120px] flex-1 overflow-y-auto scroll-y-touch flex flex-col gap-4">
-          <div className="flex flex-col flex-shrink-0">
-            <p className="text-[#8E8E93] text-[13px] font-medium tracking-tight px-1 mb-2">
-              Цвет карты
-            </p>
+        {editTab === 'theme' ? (
+          <div className="w-full max-w-[340px] px-2 pb-[120px] flex-1 overflow-y-auto scroll-y-touch flex flex-col gap-4">
+            <div className="flex flex-col flex-shrink-0">
+              <p className="text-[#8E8E93] text-[13px] font-medium tracking-tight px-1 mb-2">
+                Цвет карты
+              </p>
 
-            <div className="w-full flex justify-between px-1 mb-4">
-              {cardStyles.map((style) => {
-                const isSelected = tempStyleId === style.id;
-                return (
-                  <button
-                    key={style.id}
-                    onClick={() => setTempStyleId(style.id)}
-                    className="flex flex-col items-center gap-1.5 flex-shrink-0"
-                  >
-                    <div
-                      className="w-11 h-11 rounded-full flex items-center justify-center border-2 transition-colors duration-200"
-                      style={{ borderColor: isSelected ? style.accentColor : 'transparent' }}
+              <div className="w-full flex justify-between px-1 mb-4">
+                {cardStyles.map((style) => {
+                  const isSelected = tempStyleId === style.id;
+                  return (
+                    <button
+                      key={style.id}
+                      onClick={() => setTempStyleId(style.id)}
+                      className="flex flex-col items-center gap-1.5 flex-shrink-0 outline-none"
                     >
                       <div
-                        className={`w-9 h-9 rounded-full ${style.bgClass} border border-black/[0.08] shadow-sm transition-transform duration-200 ${
-                          isSelected ? 'scale-[0.82]' : 'scale-100'
+                        className="w-11 h-11 rounded-full flex items-center justify-center border-2 transition-colors duration-200"
+                        style={{ borderColor: isSelected ? style.accentColor : 'transparent' }}
+                      >
+                        <div
+                          className={`w-9 h-9 rounded-full ${style.bgClass} border border-black/[0.08] shadow-sm transition-transform duration-200 ${
+                            isSelected ? 'scale-[0.82]' : 'scale-100'
+                          }`}
+                        />
+                      </div>
+                      <span
+                        className={`text-[11px] font-medium transition-colors duration-200 ${
+                          isSelected ? 'text-black dark:text-white' : 'text-[#8E8E93]'
                         }`}
-                      />
-                    </div>
-                    <span
-                      className={`text-[11px] font-medium transition-colors duration-200 ${
-                        isSelected ? 'text-black dark:text-white' : 'text-[#8E8E93]'
+                      >
+                        {style.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <p className="text-[#8E8E93] text-[13px] font-medium tracking-tight px-1 mb-2">
+                Тема приложения
+              </p>
+
+              <div className="w-full grid grid-cols-3 gap-2.5 px-1 mb-4">
+                {(['light', 'dark', 'system'] as ThemeMode[]).map((t) => {
+                  const isSelected = tempTheme === t;
+                  const names: Record<ThemeMode, string> = { light: 'Светлая', dark: 'Темная', system: 'Как в системе' };
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => {
+                        setTempTheme(t);
+                        setPreviewTheme(t);
+                      }}
+                      className={`h-10 rounded-[12px] text-[12px] font-semibold transition-all duration-200 border outline-none ${
+                        isSelected 
+                          ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white shadow-md scale-[0.98]' 
+                          : 'bg-white/40 text-[#8E8E93] dark:bg-white/5 border-white/40 dark:border-white/10'
                       }`}
                     >
-                      {style.name}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+                      {names[t]}
+                    </button>
+                  );
+                })}
+              </div>
 
-            <p className="text-[#8E8E93] text-[13px] font-medium tracking-tight px-1 mb-2">
-              Тема приложения
-            </p>
+              <p className="text-[#8E8E93] text-[13px] font-medium tracking-tight px-1 mb-2">
+                Фон
+              </p>
 
-            <div className="w-full grid grid-cols-3 gap-2.5 px-1 mb-4">
-              {(['light', 'dark', 'system'] as ThemeMode[]).map((t) => {
-                const isSelected = tempTheme === t;
-                const names: Record<ThemeMode, string> = { light: 'Светлая', dark: 'Темная', system: 'Как в системе' };
-                return (
-                  <button
-                    key={t}
-                    onClick={() => {
-                      setTempTheme(t);
-                      setPreviewTheme(t);
-                    }}
-                    className={`h-10 rounded-[12px] text-[12px] font-semibold transition-all duration-200 border ${
-                      isSelected 
-                        ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white shadow-md scale-[0.98]' 
-                        : 'bg-white/40 text-[#8E8E93] dark:bg-white/5 border-white/40 dark:border-white/10'
-                    }`}
-                  >
-                    {names[t]}
-                  </button>
-                );
-              })}
-            </div>
-
-            <p className="text-[#8E8E93] text-[13px] font-medium tracking-tight px-1 mb-2">
-              Фон
-            </p>
-
-            <div className="w-full grid grid-cols-3 gap-2.5 px-1">
-              {backgroundOptions.map((bg) => {
-                const isSelected = tempBgId === bg.id;
-                return (
-                  <button
-                    key={bg.id}
-                    onClick={() => setTempBgId(bg.id)}
-                    className="flex flex-col items-center gap-1.5"
-                  >
-                    <div
-                      className={`w-full aspect-[9/13] rounded-[18px] overflow-hidden border-2 transition-all duration-200 p-[2px] ${
-                        isSelected ? 'border-black dark:border-white scale-[0.98]' : 'border-transparent'
-                      }`}
+              <div className="w-full grid grid-cols-3 gap-2.5 px-1">
+                {backgroundOptions.map((bg) => {
+                  const isSelected = tempBgId === bg.id;
+                  return (
+                    <button
+                      key={bg.id}
+                      onClick={() => setTempBgId(bg.id)}
+                      className="flex flex-col items-center gap-1.5 outline-none"
                     >
                       <div
-                        className="w-full h-full rounded-[14px] bg-cover bg-center border border-black/5 dark:border-white/10"
-                        style={{ backgroundImage: `url(${bg.image})` }}
-                      />
-                    </div>
-                    <span
-                      className={`text-[12px] font-medium transition-colors duration-200 ${
-                        isSelected ? 'text-black dark:text-white' : 'text-[#8E8E93]'
-                      }`}
-                    >
-                      {bg.name}
-                    </span>
-                  </button>
-                );
-              })}
+                        className={`w-full aspect-[9/13] rounded-[18px] overflow-hidden border-2 transition-all duration-200 p-[2px] ${
+                          isSelected ? 'border-black dark:border-white scale-[0.98]' : 'border-transparent'
+                        }`}
+                      >
+                        <div
+                          className="w-full h-full rounded-[14px] bg-cover bg-center border border-black/5 dark:border-white/10"
+                          style={{ backgroundImage: `url(${bg.image})` }}
+                        />
+                      </div>
+                      <span
+                        className={`text-[12px] font-medium transition-colors duration-200 ${
+                          isSelected ? 'text-black dark:text-white' : 'text-[#8E8E93]'
+                        }`}
+                      >
+                        {bg.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="w-full flex-shrink-0 pt-2 pb-2">
+              <JellyButton
+                type="button"
+                onClick={handleSaveTheme}
+                flashColor="bg-black/10"
+                className="w-full h-12 min-h-[48px] rounded-full flex items-center justify-center font-semibold text-[16px] shadow-sm transition-colors duration-300 flex-shrink-0"
+                style={{
+                  backgroundColor: activeStyle.accentColor,
+                  color: activeStyle.id === 'vanilla' ? '#19181F' : '#FFFFFF',
+                }}
+              >
+                Сохранить
+              </JellyButton>
             </div>
           </div>
-
-          <div className="w-full flex-shrink-0 pt-2 pb-2">
-            <JellyButton
-              type="button"
-              onClick={handleSave}
-              flashColor="bg-black/10"
-              className="w-full h-12 min-h-[48px] rounded-full flex items-center justify-center font-semibold text-[16px] shadow-sm transition-colors duration-300 flex-shrink-0"
-              style={{
-                backgroundColor: activeStyle.accentColor,
-                color: activeStyle.id === 'vanilla' ? '#19181F' : '#FFFFFF',
-              }}
+        ) : (
+          <div className="w-full max-w-[340px] px-2 pb-[120px] flex-1 overflow-y-auto scroll-y-touch flex flex-col gap-2">
+            <p className="text-[#8E8E93] text-[13px] font-medium tracking-tight px-1 mb-1">
+              Вотермарка на карту
+            </p>
+            <button
+              onClick={() => { setTempWatermark({ ...tempWatermark, id: null }); setIsWatermarkActive(false); }}
+              className={`w-full h-14 rounded-[18px] px-4 font-semibold text-[14px] text-left transition-all duration-200 border outline-none ${
+                tempWatermark.id === null 
+                  ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white shadow-md' 
+                  : 'bg-white/40 dark:bg-white/5 border-white/40 dark:border-white/10 text-black dark:text-white'
+              }`}
             >
-              Сохранить
-            </JellyButton>
+              Пусто
+            </button>
+            {availableWatermarks.map(wm => {
+              const isSelected = tempWatermark.id === wm;
+              const displayName = wm.replace('.PNG', '');
+              return (
+                <button
+                  key={wm}
+                  onClick={() => { setTempWatermark({ ...tempWatermark, id: wm }); setIsWatermarkActive(true); }}
+                  className={`w-full h-14 rounded-[18px] px-4 font-semibold text-[14px] text-left transition-all duration-200 border outline-none ${
+                    isSelected 
+                      ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white shadow-md' 
+                      : 'bg-white/40 dark:bg-white/5 border-white/40 dark:border-white/10 text-black dark:text-white'
+                  }`}
+                >
+                  {displayName}
+                </button>
+              )
+            })}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
