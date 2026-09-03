@@ -18,6 +18,8 @@ export interface WatermarkConfig {
   id: string | null;
   rotation: number;
   scale: number;
+  x: number;
+  y: number;
 }
 
 export type ThemeMode = 'light' | 'dark' | 'system';
@@ -36,16 +38,15 @@ export const backgroundOptions: BackgroundOption[] = [
   { id: 'rise', name: 'Рассвет', image: '/rise.png', themeColor: '#BD9490' },
 ];
 
-// Динамически получаем все файлы *.PNG из папки public при сборке приложения
 const rawWatermarks = import.meta.glob('/public/*.PNG');
 export const availableWatermarks = Object.keys(rawWatermarks)
   .map((path) => path.replace('/public/', ''))
   .sort();
 
 export const getStoredWatermark = (): WatermarkConfig => {
-  if (typeof window === 'undefined') return { id: null, rotation: 90, scale: 1 };
+  if (typeof window === 'undefined') return { id: null, rotation: 90, scale: 1, x: 70, y: 0 };
   const val = localStorage.getItem('kumpel_watermark');
-  return val ? JSON.parse(val) : { id: null, rotation: 90, scale: 1 };
+  return val ? JSON.parse(val) : { id: null, rotation: 90, scale: 1, x: 70, y: 0 };
 };
 
 export const setStoredWatermark = (w: WatermarkConfig): void => {
