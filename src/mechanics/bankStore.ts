@@ -44,9 +44,9 @@ export const availableWatermarks = Object.keys(rawWatermarks)
   .sort();
 
 export const getStoredWatermark = (): WatermarkConfig => {
-  if (typeof window === 'undefined') return { id: null, rotation: 90, scale: 1, x: 70, y: 0 };
+  if (typeof window === 'undefined') return { id: null, rotation: 90, scale: 1, x: 0, y: 0 };
   const val = localStorage.getItem('kumpel_watermark');
-  return val ? JSON.parse(val) : { id: null, rotation: 90, scale: 1, x: 70, y: 0 };
+  return val ? JSON.parse(val) : { id: null, rotation: 90, scale: 1, x: 0, y: 0 };
 };
 
 export const setStoredWatermark = (w: WatermarkConfig): void => {
