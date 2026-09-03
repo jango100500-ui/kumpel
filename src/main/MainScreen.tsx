@@ -355,7 +355,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                       className="w-24 h-24 object-contain transition-all duration-300 cursor-pointer"
                       style={{
                         filter: 'brightness(0) invert(1)',
-                        opacity: 0.075,
+                        opacity: 0.095,
                         transform: `rotate(${activeWatermark.rotation}deg) scale(${activeWatermark.scale})`
                       }}
                     />
