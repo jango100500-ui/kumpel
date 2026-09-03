@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useOrientation } from '@/mechanics/useOrientation';
 
 interface ExchangeScreenProps {
+  currentBgImage: string;
+  isGlavny: boolean;
   marketData: {
     rate: number;
     history: Array<{ date: string; rate: number }>;
   };
-  isGlavny: boolean;
 }
 
 const PHYSICS = {
@@ -139,7 +141,8 @@ const TimeframeSelector: React.FC<{ activeTab: number; onChange: (i: number) => 
   );
 };
 
-export const ExchangeScreen: React.FC<ExchangeScreenProps> = ({ marketData, isGlavny }) => {
+export const ExchangeScreen: React.FC<ExchangeScreenProps> = ({ currentBgImage, isGlavny, marketData }) => {
+  const tilt = useOrientation(22);
   const [selectedTf, setSelectedTf] = useState(4);
 
   const currentRate = marketData.rate || 1.0;
@@ -185,7 +188,7 @@ export const ExchangeScreen: React.FC<ExchangeScreenProps> = ({ marketData, isGl
   };
 
   return (
-    <div className="relative w-full h-full overflow-hidden flex flex-col select-none bg-transparent">
+    <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col select-none bg-transparent">
       
       <div 
         className={`relative z-10 w-full h-full flex flex-col items-center px-5 pb-[110px] ${isGlavny ? 'pt-[66px]' : ''}`}
