@@ -1,6 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { JellyButton } from '@/uis/JellyButton';
-import { useOrientation } from '@/mechanics/useOrientation';
 import { 
   cardStyles, 
   backgroundOptions, 
@@ -90,8 +89,6 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   profile,
   isGlavny,
 }) => {
-  const tilt = useOrientation(22);
-
   const sheetRef = useRef<HTMLDivElement>(null);
   const topContentRef = useRef<HTMLDivElement>(null);
   const historyListRef = useRef<HTMLDivElement>(null);
