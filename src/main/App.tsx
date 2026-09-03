@@ -178,8 +178,8 @@ export const App: React.FC = () => {
         const syncRes = await api.syncUser(t);
         if (syncRes.error) {
           setInitialData({
-            name: res.initial_name || '',
-            username: res.initial_username || '',
+            name: '',
+            username: '',
           });
           setCurrentScreen('onboarding');
           setIsAppLoading(false);
