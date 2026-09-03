@@ -14,10 +14,6 @@ import {
   backgroundOptions,
   getStoredTheme,
   setStoredTheme,
-  getStoredStyleId,
-  setStoredStyleId,
-  getStoredBgId,
-  setStoredBgId,
   ThemeMode,
 } from '@/mechanics/bankStore';
 
@@ -26,8 +22,8 @@ export const App: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<'auth' | 'auth_code' | 'onboarding' | 'main' | 'exchange' | 'transfer' | 'request'>('auth');
   const [activeTab, setActiveTab] = useState<'main' | 'exchange'>('main');
 
-  const [savedStyleId, setSavedStyleIdState] = useState(getStoredStyleId());
-  const [savedBgId, setSavedBgIdState] = useState(getStoredBgId());
+  const [savedStyleId, setSavedStyleId] = useState('classic');
+  const [savedBgId, setSavedBgId] = useState('classic');
   const [isEditMode, setIsEditMode] = useState(false);
   const [successToast, setSuccessToast] = useState<string | null>(null);
 
@@ -40,6 +36,11 @@ export const App: React.FC = () => {
     name: 'Kumpel',
     username: 'user',
     avatar: null,
+  });
+
+  const [initialData, setInitialData] = useState<{ name: string; username: string }>({
+    name: '',
+    username: '',
   });
 
   const [balance, setBalance] = useState(0);
@@ -74,15 +75,7 @@ export const App: React.FC = () => {
   const activeBg = backgroundOptions.find((b) => b.id === savedBgId) || backgroundOptions[0];
   const tilt = useOrientation(22);
 
-  const setSavedStyleId = (id: string) => {
-    setSavedStyleIdState(id);
-    setStoredStyleId(id);
-  };
-
-  const setSavedBgId = (id: string) => {
-    setSavedBgIdState(id);
-    setStoredBgId(id);
-  };
+  const isGlavny = profile.username?.toLowerCase() === 'glavny';
 
   const loadData = async (userToken: string) => {
     try {
@@ -184,6 +177,10 @@ export const App: React.FC = () => {
         setToken(t);
         const syncRes = await api.syncUser(t);
         if (syncRes.error) {
+          setInitialData({
+            name: res.initial_name || '',
+            username: res.initial_username || '',
+          });
           setCurrentScreen('onboarding');
           setIsAppLoading(false);
         } else {
@@ -272,8 +269,6 @@ export const App: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [successToast]);
-
-  const isGlavny = profile.username?.toLowerCase() === 'glavny';
 
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden select-none bg-[#5491D0]">
@@ -385,6 +380,7 @@ export const App: React.FC = () => {
         <div className="absolute inset-0 w-full h-full will-change-transform z-10" style={getTabStyle('exchange')}>
           <ExchangeScreen
             marketData={marketData}
+            currentBgImage={activeBg.image}
             isGlavny={isGlavny}
           />
         </div>
@@ -400,6 +396,7 @@ export const App: React.FC = () => {
           }}
           activeStyle={activeStyle}
           balance={balance}
+          currentBgImage={activeBg.image}
           token={token}
           isGlavny={isGlavny}
         />
@@ -410,6 +407,7 @@ export const App: React.FC = () => {
           isActive={currentScreen === 'request'}
           onBack={() => setCurrentScreen(activeTab)}
           activeStyle={activeStyle}
+          currentBgImage={activeBg.image}
           token={token}
           isGlavny={isGlavny}
         />
