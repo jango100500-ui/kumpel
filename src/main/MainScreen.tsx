@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { JellyButton } from '@/uis/JellyButton';
+import { useOrientation } from '@/mechanics/useOrientation';
 import { 
   cardStyles, 
   backgroundOptions, 
@@ -89,6 +90,8 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   profile,
   isGlavny,
 }) => {
+  const tilt = useOrientation(22);
+
   const sheetRef = useRef<HTMLDivElement>(null);
   const topContentRef = useRef<HTMLDivElement>(null);
   const historyListRef = useRef<HTMLDivElement>(null);
@@ -116,9 +119,36 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   const [rotInput, setRotInput] = useState(false);
   const [scaleInput, setScaleInput] = useState(false);
 
+  const wmDrag = useRef({ startX: 0, startY: 0, initX: 0, initY: 0, isDragging: false });
+
   const activeStyle = cardStyles.find((s) => s.id === (isEditMode ? tempStyleId : savedStyleId)) || cardStyles[0];
   const activeWatermark = isEditMode ? tempWatermark : savedWatermark;
-  const hasWatermarkChanges = tempWatermark.id !== savedWatermark.id || tempWatermark.rotation !== savedWatermark.rotation || tempWatermark.scale !== savedWatermark.scale;
+  const hasWatermarkChanges = tempWatermark.id !== savedWatermark.id || tempWatermark.rotation !== savedWatermark.rotation || tempWatermark.scale !== savedWatermark.scale || tempWatermark.x !== savedWatermark.x || tempWatermark.y !== savedWatermark.y;
+
+  useEffect(() => {
+    const handleMove = (e: PointerEvent) => {
+      if (wmDrag.current.isDragging) {
+        const dx = e.clientX - wmDrag.current.startX;
+        const dy = e.clientY - wmDrag.current.startY;
+        setTempWatermark(prev => ({
+          ...prev,
+          x: wmDrag.current.initX + dx,
+          y: wmDrag.current.initY + dy
+        }));
+      }
+    };
+    const handleUp = () => {
+      wmDrag.current.isDragging = false;
+    };
+    window.addEventListener('pointermove', handleMove);
+    window.addEventListener('pointerup', handleUp);
+    window.addEventListener('pointercancel', handleUp);
+    return () => {
+      window.removeEventListener('pointermove', handleMove);
+      window.removeEventListener('pointerup', handleUp);
+      window.removeEventListener('pointercancel', handleUp);
+    };
+  }, []);
 
   useEffect(() => {
     const updateTimer = () => {
@@ -234,6 +264,16 @@ export const MainScreen: React.FC<MainScreenProps> = ({
     rafId.current = requestAnimationFrame(smoothSnap);
   };
 
+  const handleSaveTheme = () => {
+    setSavedStyleId(tempStyleId);
+    setSavedBgId(tempBgId);
+    setSavedTheme(tempTheme);
+    setSavedWatermark(tempWatermark);
+    setStoredWatermark(tempWatermark);
+    setPreviewTheme(null);
+    setIsEditMode(false);
+  };
+
   const toggleEditMode = () => {
     if (!isEditMode) {
       setTempStyleId(savedStyleId);
@@ -247,17 +287,8 @@ export const MainScreen: React.FC<MainScreenProps> = ({
       setIsEditMode(true);
       setIsFlipped(false);
     } else {
-      setPreviewTheme(null);
-      setIsEditMode(false);
+      handleSaveTheme();
     }
-  };
-
-  const handleSaveTheme = () => {
-    setSavedStyleId(tempStyleId);
-    setSavedBgId(tempBgId);
-    setSavedTheme(tempTheme);
-    setPreviewTheme(null);
-    setIsEditMode(false);
   };
 
   useEffect(() => {
@@ -271,7 +302,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   const displayName = profile.name.length > 7 ? profile.name.slice(0, 7) + '…' : profile.name;
 
   return (
-    <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col select-none bg-transparent">
+    <div className="relative w-full h-full overflow-hidden flex flex-col select-none bg-transparent">
       
       <div
         ref={topContentRef}
@@ -331,7 +362,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
             }`}
           >
             <div
-              className={`absolute inset-0 backface-hidden rounded-[24px] p-5 flex flex-col justify-between shadow-lg transition-colors duration-300 ${activeStyle.bgClass} ${activeStyle.textClass}`}
+              className={`absolute inset-0 backface-hidden rounded-[24px] p-5 flex flex-col justify-between shadow-lg transition-colors duration-300 overflow-hidden ${activeStyle.bgClass} ${activeStyle.textClass}`}
             >
               <div className="w-full flex justify-start items-start gap-3 relative z-20">
                 <span className="text-[17px] font-semibold tracking-wide">
@@ -343,67 +374,82 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                 <EMVChip />
               </div>
 
-              <div className="absolute inset-y-0 right-6 flex items-center justify-center w-[120px] pointer-events-none z-10">
-                <div 
-                  className={`relative flex items-center justify-center w-full h-full ${isEditMode && editTab === 'watermark' ? 'pointer-events-auto' : ''}`}
-                >
-                  {activeWatermark.id && (
-                    <img
-                      src={`/${activeWatermark.id}`}
-                      alt="Watermark"
-                      onClick={() => { if(isEditMode && editTab === 'watermark') setIsWatermarkActive(true); }}
-                      className="w-24 h-24 object-contain transition-all duration-300 cursor-pointer"
-                      style={{
-                        filter: 'brightness(0) invert(1)',
-                        opacity: 0.095,
-                        transform: `rotate(${activeWatermark.rotation}deg) scale(${activeWatermark.scale})`
-                      }}
-                    />
-                  )}
+              <div 
+                className={`absolute z-10 flex items-center justify-center w-[120px] h-[120px] ${isEditMode && editTab === 'watermark' ? 'pointer-events-auto touch-none cursor-grab active:cursor-grabbing' : 'pointer-events-none'}`}
+                style={{
+                  top: '50%',
+                  left: '50%',
+                  transform: `translate(-50%, -50%) translate(${activeWatermark.x}px, ${activeWatermark.y}px)`
+                }}
+                onPointerDown={(e) => {
+                  if (isEditMode && editTab === 'watermark') {
+                    wmDrag.current = {
+                      startX: e.clientX,
+                      startY: e.clientY,
+                      initX: tempWatermark.x,
+                      initY: tempWatermark.y,
+                      isDragging: true
+                    };
+                    setIsWatermarkActive(true);
+                    e.stopPropagation();
+                  }
+                }}
+              >
+                {activeWatermark.id && (
+                  <img
+                    src={`/${activeWatermark.id}`}
+                    alt="Watermark"
+                    className="w-24 h-24 object-contain transition-all duration-300 pointer-events-none"
+                    style={{
+                      filter: 'brightness(0) invert(1)',
+                      opacity: activeStyle.id === 'dark' ? 0.075 : 0.095,
+                      transform: `rotate(${activeWatermark.rotation}deg) scale(${activeWatermark.scale})`
+                    }}
+                  />
+                )}
 
-                  {isEditMode && editTab === 'watermark' && isWatermarkActive && activeWatermark.id && (
-                    <>
-                      <div className="absolute -top-6 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full px-1.5 py-1 gap-1.5 shadow-lg border border-white/20 animate-in fade-in zoom-in-95" onClick={e => e.stopPropagation()}>
-                        <button onClick={() => setTempWatermark({ ...tempWatermark, rotation: tempWatermark.rotation - 1 })} className="w-6 h-6 rounded-full bg-white/20 text-white flex items-center justify-center text-[16px] font-bold active:bg-white/40">−</button>
-                        <div className="w-10 text-center text-white text-[12px] font-bold cursor-pointer" onClick={() => setRotInput(true)}>
-                          {rotInput ? (
-                            <input 
-                              type="number" 
-                              autoFocus 
-                              onBlur={() => setRotInput(false)}
-                              onChange={(e) => setTempWatermark({ ...tempWatermark, rotation: parseInt(e.target.value) || 0 })}
-                              className="w-full bg-transparent text-center outline-none"
-                              value={tempWatermark.rotation}
-                            />
-                          ) : (
-                            `${tempWatermark.rotation}°`
-                          )}
-                        </div>
-                        <button onClick={() => setTempWatermark({ ...tempWatermark, rotation: tempWatermark.rotation + 1 })} className="w-6 h-6 rounded-full bg-white/20 text-white flex items-center justify-center text-[16px] font-bold active:bg-white/40">+</button>
+                {isEditMode && editTab === 'watermark' && isWatermarkActive && activeWatermark.id && (
+                  <>
+                    <div className="absolute -top-6 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full px-1.5 py-1 gap-1.5 shadow-lg border border-white/20 animate-in fade-in zoom-in-95" onClick={e => e.stopPropagation()}>
+                      <button onClick={() => setTempWatermark({ ...tempWatermark, rotation: tempWatermark.rotation - 1 })} className="w-6 h-6 rounded-full bg-white/20 text-white flex items-center justify-center text-[16px] font-bold active:bg-white/40">−</button>
+                      <div className="w-10 text-center text-white text-[12px] font-bold cursor-pointer" onClick={() => setRotInput(true)}>
+                        {rotInput ? (
+                          <input 
+                            type="number" 
+                            autoFocus 
+                            onBlur={() => setRotInput(false)}
+                            onChange={(e) => setTempWatermark({ ...tempWatermark, rotation: parseInt(e.target.value) || 0 })}
+                            className="w-full bg-transparent text-center outline-none"
+                            value={tempWatermark.rotation}
+                          />
+                        ) : (
+                          `${tempWatermark.rotation}°`
+                        )}
                       </div>
+                      <button onClick={() => setTempWatermark({ ...tempWatermark, rotation: tempWatermark.rotation + 1 })} className="w-6 h-6 rounded-full bg-white/20 text-white flex items-center justify-center text-[16px] font-bold active:bg-white/40">+</button>
+                    </div>
 
-                      <div className="absolute -bottom-6 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full px-1.5 py-1 gap-1.5 shadow-lg border border-white/20 animate-in fade-in zoom-in-95" onClick={e => e.stopPropagation()}>
-                        <button onClick={() => setTempWatermark({ ...tempWatermark, scale: Math.max(0.3, Math.round((tempWatermark.scale - 0.1)*10)/10) })} className="w-6 h-6 rounded-full bg-white/20 text-white flex items-center justify-center text-[16px] font-bold active:bg-white/40">−</button>
-                        <div className="w-10 text-center text-white text-[12px] font-bold cursor-pointer" onClick={() => setScaleInput(true)}>
-                          {scaleInput ? (
-                            <input 
-                              type="number" 
-                              step="0.1"
-                              autoFocus 
-                              onBlur={() => setScaleInput(false)}
-                              onChange={(e) => setTempWatermark({ ...tempWatermark, scale: Math.min(2.0, Math.max(0.3, parseFloat(e.target.value) || 1)) })}
-                              className="w-full bg-transparent text-center outline-none"
-                              value={tempWatermark.scale}
-                            />
-                          ) : (
-                            `${tempWatermark.scale}`
-                          )}
-                        </div>
-                        <button onClick={() => setTempWatermark({ ...tempWatermark, scale: Math.min(2.0, Math.round((tempWatermark.scale + 0.1)*10)/10) })} className="w-6 h-6 rounded-full bg-white/20 text-white flex items-center justify-center text-[16px] font-bold active:bg-white/40">+</button>
+                    <div className="absolute -bottom-6 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full px-1.5 py-1 gap-1.5 shadow-lg border border-white/20 animate-in fade-in zoom-in-95" onClick={e => e.stopPropagation()}>
+                      <button onClick={() => setTempWatermark({ ...tempWatermark, scale: Math.max(0.3, Math.round((tempWatermark.scale - 0.1)*10)/10) })} className="w-6 h-6 rounded-full bg-white/20 text-white flex items-center justify-center text-[16px] font-bold active:bg-white/40">−</button>
+                      <div className="w-10 text-center text-white text-[12px] font-bold cursor-pointer" onClick={() => setScaleInput(true)}>
+                        {scaleInput ? (
+                          <input 
+                            type="number" 
+                            step="0.1"
+                            autoFocus 
+                            onBlur={() => setScaleInput(false)}
+                            onChange={(e) => setTempWatermark({ ...tempWatermark, scale: Math.min(2.0, Math.max(0.3, parseFloat(e.target.value) || 1)) })}
+                            className="w-full bg-transparent text-center outline-none"
+                            value={tempWatermark.scale}
+                          />
+                        ) : (
+                          `${tempWatermark.scale}`
+                        )}
                       </div>
-                    </>
-                  )}
-                </div>
+                      <button onClick={() => setTempWatermark({ ...tempWatermark, scale: Math.min(2.0, Math.round((tempWatermark.scale + 0.1)*10)/10) })} className="w-6 h-6 rounded-full bg-white/20 text-white flex items-center justify-center text-[16px] font-bold active:bg-white/40">+</button>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="w-full flex justify-between items-end mt-auto relative z-20">
@@ -485,10 +531,6 @@ export const MainScreen: React.FC<MainScreenProps> = ({
             <JellyButton
               type="button"
               onClick={() => {
-                if (hasWatermarkChanges) {
-                  setSavedWatermark(tempWatermark);
-                  setStoredWatermark(tempWatermark);
-                }
                 setEditTab('theme');
                 setIsWatermarkActive(false);
               }}
@@ -645,7 +687,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                         setTempTheme(t);
                         setPreviewTheme(t);
                       }}
-                      className={`h-10 rounded-[12px] text-[12px] font-semibold transition-all duration-200 border outline-none ${
+                      className={`h-10 rounded-full text-[12px] font-semibold transition-all duration-200 border outline-none ${
                         isSelected 
                           ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white shadow-md scale-[0.98]' 
                           : 'bg-white/40 text-[#8E8E93] dark:bg-white/5 border-white/40 dark:border-white/10'
@@ -692,21 +734,6 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                 })}
               </div>
             </div>
-
-            <div className="w-full flex-shrink-0 pt-2 pb-2">
-              <JellyButton
-                type="button"
-                onClick={handleSaveTheme}
-                flashColor="bg-black/10"
-                className="w-full h-12 min-h-[48px] rounded-full flex items-center justify-center font-semibold text-[16px] shadow-sm transition-colors duration-300 flex-shrink-0"
-                style={{
-                  backgroundColor: activeStyle.accentColor,
-                  color: activeStyle.id === 'vanilla' ? '#19181F' : '#FFFFFF',
-                }}
-              >
-                Сохранить
-              </JellyButton>
-            </div>
           </div>
         ) : (
           <div className="w-full max-w-[340px] px-2 pb-[120px] flex-1 overflow-y-auto scroll-y-touch flex flex-col gap-2">
@@ -715,7 +742,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
             </p>
             <button
               onClick={() => { setTempWatermark({ ...tempWatermark, id: null }); setIsWatermarkActive(false); }}
-              className={`w-full h-14 rounded-[18px] px-4 font-semibold text-[14px] text-left transition-all duration-200 border outline-none ${
+              className={`w-full h-14 rounded-full px-4 font-semibold text-[14px] text-left transition-all duration-200 border outline-none flex-shrink-0 ${
                 tempWatermark.id === null 
                   ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white shadow-md' 
                   : 'bg-white/40 dark:bg-white/5 border-white/40 dark:border-white/10 text-black dark:text-white'
@@ -730,7 +757,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                 <button
                   key={wm}
                   onClick={() => { setTempWatermark({ ...tempWatermark, id: wm }); setIsWatermarkActive(true); }}
-                  className={`w-full h-14 rounded-[18px] px-4 font-semibold text-[14px] text-left transition-all duration-200 border outline-none ${
+                  className={`w-full h-14 rounded-full px-4 font-semibold text-[14px] text-left transition-all duration-200 border outline-none flex-shrink-0 ${
                     isSelected 
                       ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white shadow-md' 
                       : 'bg-white/40 dark:bg-white/5 border-white/40 dark:border-white/10 text-black dark:text-white'
