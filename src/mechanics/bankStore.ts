@@ -14,6 +14,12 @@ export interface BackgroundOption {
   themeColor: string;
 }
 
+export interface WatermarkConfig {
+  id: string | null;
+  rotation: number;
+  scale: number;
+}
+
 export type ThemeMode = 'light' | 'dark' | 'system';
 
 export const cardStyles: CardStyle[] = [
@@ -30,15 +36,21 @@ export const backgroundOptions: BackgroundOption[] = [
   { id: 'rise', name: 'Рассвет', image: '/rise.png', themeColor: '#BD9490' },
 ];
 
-export const getStoredBalance = (): number => {
-  if (typeof window === 'undefined') return 500;
-  const val = localStorage.getItem('kumpel_balance');
-  return val !== null ? parseFloat(val) : 500;
+// Динамически получаем все файлы *.PNG из папки public при сборке приложения
+const rawWatermarks = import.meta.glob('/public/*.PNG');
+export const availableWatermarks = Object.keys(rawWatermarks)
+  .map((path) => path.replace('/public/', ''))
+  .sort();
+
+export const getStoredWatermark = (): WatermarkConfig => {
+  if (typeof window === 'undefined') return { id: null, rotation: 90, scale: 1 };
+  const val = localStorage.getItem('kumpel_watermark');
+  return val ? JSON.parse(val) : { id: null, rotation: 90, scale: 1 };
 };
 
-export const setStoredBalance = (balance: number): void => {
+export const setStoredWatermark = (w: WatermarkConfig): void => {
   if (typeof window === 'undefined') return;
-  localStorage.setItem('kumpel_balance', balance.toString());
+  localStorage.setItem('kumpel_watermark', JSON.stringify(w));
 };
 
 export const getStoredTheme = (): ThemeMode => {
@@ -49,6 +61,17 @@ export const getStoredTheme = (): ThemeMode => {
 export const setStoredTheme = (theme: ThemeMode): void => {
   if (typeof window === 'undefined') return;
   localStorage.setItem('kumpel_theme', theme);
+};
+
+export const getStoredBalance = (): number => {
+  if (typeof window === 'undefined') return 500;
+  const val = localStorage.getItem('kumpel_balance');
+  return val !== null ? parseFloat(val) : 500;
+};
+
+export const setStoredBalance = (balance: number): void => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('kumpel_balance', balance.toString());
 };
 
 export const generateTransferLink = (amount: number): string => {
