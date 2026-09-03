@@ -14,6 +14,10 @@ import {
   backgroundOptions,
   getStoredTheme,
   setStoredTheme,
+  getStoredStyleId,
+  setStoredStyleId,
+  getStoredBgId,
+  setStoredBgId,
   ThemeMode,
 } from '@/mechanics/bankStore';
 
@@ -22,9 +26,10 @@ export const App: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<'auth' | 'auth_code' | 'onboarding' | 'main' | 'exchange' | 'transfer' | 'request'>('auth');
   const [activeTab, setActiveTab] = useState<'main' | 'exchange'>('main');
 
-  const [savedStyleId, setSavedStyleId] = useState('classic');
-  const [savedBgId, setSavedBgId] = useState('classic');
+  const [savedStyleId, setSavedStyleIdState] = useState(getStoredStyleId());
+  const [savedBgId, setSavedBgIdState] = useState(getStoredBgId());
   const [isEditMode, setIsEditMode] = useState(false);
+  const [successToast, setSuccessToast] = useState<string | null>(null);
 
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('kumpel_token'));
   const [profile, setProfile] = useState<{
@@ -69,7 +74,15 @@ export const App: React.FC = () => {
   const activeBg = backgroundOptions.find((b) => b.id === savedBgId) || backgroundOptions[0];
   const tilt = useOrientation(22);
 
-  const isGlavny = profile.username?.toLowerCase() === 'glavny';
+  const setSavedStyleId = (id: string) => {
+    setSavedStyleIdState(id);
+    setStoredStyleId(id);
+  };
+
+  const setSavedBgId = (id: string) => {
+    setSavedBgIdState(id);
+    setStoredBgId(id);
+  };
 
   const loadData = async (userToken: string) => {
     try {
@@ -145,6 +158,7 @@ export const App: React.FC = () => {
   }, [savedTheme, previewTheme]);
 
   const sendNotification = (message: string) => {
+    setSuccessToast(message);
     if (typeof window !== 'undefined' && 'Notification' in window) {
       if (Notification.permission === 'granted') {
         try {
@@ -252,6 +266,15 @@ export const App: React.FC = () => {
     };
   };
 
+  useEffect(() => {
+    if (successToast) {
+      const timer = setTimeout(() => setSuccessToast(null), 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [successToast]);
+
+  const isGlavny = profile.username?.toLowerCase() === 'glavny';
+
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden select-none bg-[#5491D0]">
       <div
@@ -259,6 +282,21 @@ export const App: React.FC = () => {
           isAppLoading ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
       />
+
+      {successToast && (
+        <div className="absolute top-[calc(max(env(safe-area-inset-top),48px)+8px)] inset-x-0 z-[60] flex justify-center px-4 animate-in fade-in slide-in-from-top-4 duration-300 pointer-events-none">
+          <div className="w-full max-w-[340px] bg-white/90 dark:bg-[#1C1C1E]/90 border border-black/10 dark:border-white/10 backdrop-blur-xl rounded-[20px] p-4 shadow-xl flex items-center gap-3 pointer-events-auto">
+            <div className="w-9 h-9 rounded-full bg-[#34C759] flex items-center justify-center shadow-sm flex-shrink-0">
+              <svg className="w-5 h-5 text-white stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <span className="text-black dark:text-white text-[14px] font-semibold tracking-tight leading-tight">
+              {successToast}
+            </span>
+          </div>
+        </div>
+      )}
 
       {qrToPay && (
         <div className="absolute inset-0 z-[70] bg-black/50 backdrop-blur-md flex items-center justify-center px-5 animate-in fade-in duration-200 pointer-events-auto">
@@ -305,7 +343,11 @@ export const App: React.FC = () => {
       </div>
 
       <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10" style={getScreenStyle('onboarding')}>
-        <OnboardingScreen onComplete={handleOnboardingComplete} />
+        <OnboardingScreen
+          initialName={initialData.name}
+          initialUsername={initialData.username}
+          onComplete={handleOnboardingComplete}
+        />
       </div>
 
       <div className="absolute inset-0 w-full h-full overflow-hidden will-change-transform z-10" style={getScreenStyle('mainFlow')}>
@@ -358,7 +400,6 @@ export const App: React.FC = () => {
           }}
           activeStyle={activeStyle}
           balance={balance}
-          currentBgImage={activeBg.image}
           token={token}
           isGlavny={isGlavny}
         />
@@ -369,7 +410,6 @@ export const App: React.FC = () => {
           isActive={currentScreen === 'request'}
           onBack={() => setCurrentScreen(activeTab)}
           activeStyle={activeStyle}
-          currentBgImage={activeBg.image}
           token={token}
           isGlavny={isGlavny}
         />
@@ -382,7 +422,7 @@ export const App: React.FC = () => {
         }}
       >
         <div
-          className="absolute bottom-0 inset-x-0 h-[120px] backdrop-blur-[16px] -z-10 transition-opacity duration-500"
+          className="absolute bottom-0 inset-x-0 h-[140px] backdrop-blur-[16px] -z-10 transition-opacity duration-500"
           style={{
             WebkitMaskImage: 'linear-gradient(to top, black 50%, transparent 100%)',
             maskImage: 'linear-gradient(to top, black 50%, transparent 100%)',
